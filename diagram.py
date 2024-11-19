@@ -1,21 +1,21 @@
-from graphviz import Digraph
+import matplotlib.pyplot as plt
+import networkx as nx
 
-# Initialize diagram
-er_diagram = Digraph(format='png', engine='dot')
-er_diagram.attr(rankdir='LR', size='8,5')
+# Create a directed graph
+G = nx.DiGraph()
 
-# Define nodes for each dataset
+# Define nodes (datasets)
 datasets = {
-    "Health Checkup Result": "IDV_ID\nAGE_GROUP\nSEX\nBMI\nBP_HIGH\nBP_LWST\nBLDS\nTOT_CHOLE\nSMK_STAT",
-    "Heart Disease": "age\nsex\nchol\ntrestbps\ntarget",
-    "Depression": "Age\nSex\nSmoking Status\nDepressionScore",
-    "Diabetes": "BMI\nHighBP\nHighChol\nSmoker\nDiabetes_012",
-    "Stroke": "age\ngender\nbmi\navg_glucose_level\nsmoking_status"
+    "Health Checkup Result": ["IDV_ID", "AGE_GROUP", "SEX", "BMI", "BP_HIGH", "BP_LWST", "BLDS", "TOT_CHOLE", "SMK_STAT"],
+    "Heart Disease": ["age", "sex", "chol", "trestbps", "target"],
+    "Depression": ["Age", "Sex", "Smoking Status", "DepressionScore"],
+    "Diabetes": ["BMI", "HighBP", "HighChol", "Smoker", "Diabetes_012"],
+    "Stroke": ["age", "gender", "bmi", "avg_glucose_level", "smoking_status"]
 }
 
-# Add dataset nodes
+# Add nodes to the graph
 for dataset, columns in datasets.items():
-    er_diagram.node(dataset, f"{dataset}\n---\n{columns}", shape='box', style='rounded,filled', color='lightblue')
+    G.add_node(dataset, label="\n".join(columns))
 
 # Define relationships (edges)
 relationships = [
@@ -25,12 +25,29 @@ relationships = [
     ("Health Checkup Result", "Stroke", "AGE_GROUP ↔ age\nSEX ↔ gender\nBMI ↔ bmi\nBLDS ↔ avg_glucose_level")
 ]
 
-# Add edges to diagram
+# Add edges with labels
 for src, dst, label in relationships:
-    er_diagram.edge(src, dst, label=label, fontsize='10')
+    G.add_edge(src, dst, label=label)
 
-# Render the diagram to a file
-file_path = 'er_diagram'
-er_diagram.render(file_path, format='png', cleanup=True)
+# Draw the graph
+pos = nx.spring_layout(G)
+plt.figure(figsize=(12, 8))
 
-print(f"ER Diagram saved as {file_path}.png")
+# Draw nodes
+nx.draw_networkx_nodes(G, pos, node_size=3000, node_color='lightblue')
+
+# Draw edges
+nx.draw_networkx_edges(G, pos, arrowstyle="->", arrowsize=20)
+
+# Draw labels
+node_labels = {node: f"{node}\n---\n{'\n'.join(datasets[node])}" for node in G.nodes()}
+nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=8)
+
+# Draw edge labels
+edge_labels = {(src, dst): label for src, dst, label in relationships}
+nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
+
+# Show the plot
+plt.title("Entity-Relationship Diagram", fontsize=16)
+plt.axis("off")
+plt.show()
