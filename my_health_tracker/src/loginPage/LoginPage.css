@@ -93,6 +93,5 @@ p.text-maroon {
 /* Increase width of the left content */
 .col-12.col-md-6.col-lg-4 {
     width: 45%; /* Adjust as necessary */
+    height: 100%;
 }
-
-
