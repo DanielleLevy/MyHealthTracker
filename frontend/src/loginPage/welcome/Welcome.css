@@ -1,0 +1,36 @@
+
+.app-name {
+    font-family: "Dancing Script", cursive;
+    font-size: 50px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+
+@keyframes flip {
+    0% {
+      transform: rotateY(0deg); /* Starting position */
+    }
+    50% {
+      transform: rotateY(180deg); /* Halfway through the animation (flip halfway) */
+    }
+    100% {
+      transform: rotateY(360deg); /* End position (completes a full flip) */
+    }
+  }
+  
+  .App-logo {
+    max-width: 200px;
+    max-height: 200px;
+    width: auto;
+    height: auto;
+    overflow: visible;  /* Ensures no clipping */
+    margin-bottom: 50px; /* Optional, adds spacing */
+    margin-top: 50px;
+    
+    animation: flip 3s infinite; /* Apply flip animation */
+  }
+  
+  
+  
