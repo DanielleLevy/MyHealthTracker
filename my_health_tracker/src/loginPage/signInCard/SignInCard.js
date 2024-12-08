@@ -3,13 +3,13 @@ import LoginForm from "./LoginForm";
 import "./SignInCard.css";
 import ForgetPassword from "./ForgetPassword";
 
-function SignInCard(){
+function SignInCard({onCreateAccount}){
     return (
         <div className="card login-card shadow">
           <div className="card-body">
-            <h2 className="text-center mb-4 text-maroon icon">Sign In</h2>
+            <h2 className="text-center mb-4 text-maroon icon">Log In</h2>
             <LoginForm />
-            <ForgetPassword />
+            <ForgetPassword onCreateAccount={onCreateAccount}/>
           </div>
         </div>
       );

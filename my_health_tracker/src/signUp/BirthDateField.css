@@ -1,0 +1,29 @@
+/* Birthdate Section */
+.birthday {
+    font-size: 14px;
+    color: #5f0000; /* Maroon */
+}
+
+.birthday label {
+    color: #5f0000; /* Maroon */
+    font-size: 16px;
+
+}
+
+
+/* Hover effect for the question mark icon */
+.question-icon:hover #passwordHelpInline {
+    display: block;
+}
+
+.signUp-helper-text {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 13px;
+    color: #5f0000; /* Maroon text */
+}

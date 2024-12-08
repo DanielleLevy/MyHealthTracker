@@ -1,0 +1,28 @@
+/* Gender Section Styling */
+.check-box-gender {
+    margin-left: 5px;
+    font-size: 16px;
+    color: #5f0000; /* Maroon */
+}
+
+.gender-btn {
+    margin-top: 5px;
+    font-size: 16px;
+    padding: 10px 30px;
+    border: 2px solid #800000; /* Maroon border */
+    border-radius: 5px;
+    color: #800000;
+    background-color: transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.gender-btn:hover {
+    background-color: #800000; /* Maroon on hover */
+    color: white; /* White text on hover */
+}
+
+/* Active/Selected Gender Button */
+.gender-btn .form-check-input:checked + .form-check-label {
+    background-color: #800000; /* Maroon */
+    color: white;
+}

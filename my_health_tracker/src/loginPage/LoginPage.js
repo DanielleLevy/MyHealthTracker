@@ -13,7 +13,7 @@ import {useNavigate } from 'react-router-dom';
 import LoginLogo from './loginLogo/LoginLogo'; */
 
 
-function LoginPage({toggleForm, userData, setUserData}) {
+function LoginPage({toggleForm, userData, setUserData, onCreateAccount}) {
     // const [email, setEmail] = useState(userData.Email || ''); //if user hasn't entered email, initilize as empty
     // const [password, setPassword] = useState('');
     // const [error, setError] = useState('');
@@ -45,7 +45,7 @@ function LoginPage({toggleForm, userData, setUserData}) {
     return (
         <div className="container-fluid login-page d-flex justify-content-center align-items-center">
           <Welcome />
-          <SignInCard />
+          <SignInCard onCreateAccount={onCreateAccount}/>
         </div>
       );
 }

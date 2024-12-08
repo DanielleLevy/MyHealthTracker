@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+/* Two-column layout for SignUp Page */
+.signUp-page {
+    display: flex; /* Use flexbox to align sections side by side */
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff2f6; /* Light pink */
+    height: 100vh;
+}
+
+
+/* Right Section (Sign Up Form) */
+.form-box-signUp {
+    flex: 1;
+    max-width: 500px; /* Restrict the width for consistency */
+    background-color: #f9e2de; /* Light brown */
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+/* Close Button */
+button.btn-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #0b0a0a; /* Maroon */
+    cursor: pointer;
+}
+
+button.btn-close:hover {
+    color: #6a0000; /* Darker maroon */
+}
+
+/* Form Fields */
+form .form-control {
+    border: 2px solid #800000; /* Maroon border */
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 1rem;
+    color: #5f0000; /* Maroon text */
+    background-color: #fff;
+    margin-bottom: 5px;
+}
+
+form .form-control:focus {
+    border-color: #6a0000; /* Darker maroon */
+    box-shadow: 0 0 5px rgba(106, 0, 0, 0.5); /* Slight maroon glow */
+    outline: none;
+}
+
+/* Submit Button */
+form button.btn-sign {
+    background-color: #800000; /* Maroon */
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+}
+
+form button.btn-sign:hover {
+    background-color: #6a0000; /* Darker maroon */
+}
+
+
+.height-weight .form-label{
+    color: #5f0000
+}
