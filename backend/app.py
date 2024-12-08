@@ -1,30 +1,37 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from models import db, init_app, User  # ייבוא המודלים
+from flask_migrate import Migrate  # Import Flask-Migrate
+from models import db, init_app, User  # Import models and db
+import os
 
-# יצירת אפליקציה של Flask
+# Create the Flask application
 app = Flask(__name__)
 
+# Enable CORS
 CORS(app)
 
-# הגדרות מסד הנתונים
+# Database settings
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///../instance/myhealthtracker.db'
 print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# אתחול מסד הנתונים
+# Initialize the app with the database
 init_app(app)
 
-# יצירת מסד הנתונים (אם לא קיים)
+# Initialize Flask-Migrate
+migrate = Migrate(app, db)
+
+# Create the database if it doesn't exist (using migrations for future updates)
 with app.app_context():
     db.create_all()
 
-# נקודות קצה
+# Route to get all users
 @app.route('/users', methods=['GET'])
 def get_users():
     users = User.query.all()
     return jsonify([{"id": user.id, "username": user.username, "age": user.age} for user in users])
 
+# Route to add a new user
 @app.route('/users', methods=['POST'])
 def add_user():
     data = request.json
@@ -37,10 +44,11 @@ def add_user():
     db.session.commit()
     return jsonify({"message": "User added successfully!"})
 
+# Home route
 @app.route('/')
 def home():
     return "Welcome to MyHealthTracker!"
 
-# הרצת האפליקציה
+# Run the app
 if __name__ == '__main__':
     app.run(debug=True)

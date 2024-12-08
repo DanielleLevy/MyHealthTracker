@@ -6,6 +6,7 @@ def init_app(app):
     db.init_app(app)
 
 class User(db.Model):
+    __tablename__ = 'user'  # שם הטבלה במסד הנתונים
     id = db.Column(db.Integer, primary_key=True)  # ID ייחודי
     username = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
@@ -34,7 +35,7 @@ class MentalHealth(db.Model):
     chronic_condition = db.Column(db.Boolean)
 
 class LifeStyle(db.Model):
-    user_username = db.Column(db.String(255), db.ForeignKey('user.username'), primary_key=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True, nullable=False)
     smoking = db.Column(db.Boolean)
     drinking = db.Column(db.Boolean)
     physical_activity = db.Column(db.Integer)
