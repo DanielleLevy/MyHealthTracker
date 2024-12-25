@@ -1,6 +1,7 @@
 import './App.css';
 import LoginPage from './loginPage/LoginPage';
 import SignUp from './signUp/SignUp';
+import MainPage from './MainPage';
 import { useState } from 'react';
 
 function App() {
@@ -15,13 +16,14 @@ function App() {
   };
   return (
     <div className="App">
-                  {!showSignUp ? (
+                  {/* {!showSignUp ? (
                 // Render the ForgotPassword component
                 <LoginPage onCreateAccount={handleCreateAccountClick} />
             ) : (
                 // Render the SignUp component
                 <SignUp onClose={handleCloseSignUp} />
-            )}
+            )} */}
+            <MainPage/>
     </div>
   );
 }
