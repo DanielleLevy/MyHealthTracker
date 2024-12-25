@@ -21,21 +21,6 @@
     position: relative;
 }
 
-/* Close Button */
-button.btn-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: #0b0a0a; /* Maroon */
-    cursor: pointer;
-}
-
-button.btn-close:hover {
-    color: #6a0000; /* Darker maroon */
-}
 
 /* Form Fields */
 form .form-control {
@@ -75,4 +60,13 @@ form button.btn-sign:hover {
 
 .height-weight .form-label{
     color: #5f0000
+}
+
+#btn-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    color: #800000; /* Maroon */
+    cursor: pointer;
 }

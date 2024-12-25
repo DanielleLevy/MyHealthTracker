@@ -55,7 +55,7 @@ function SignUp({ onClose }) {
         <div className="container-fluid login-page d-flex justify-content-center align-items-center">
           <Welcome />
           <div className="form-box-signUp">
-                <button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>
+                <button type="button" id="btn-close" className="btn-close" aria-label="Close" onClick={onClose}></button>
                 <TitleSignUp />
                 <form className="needs-validation" onSubmit={handleSignUp}>
                     <NameField required setFirstName={setFirstName} setLastName={setLastName} />
