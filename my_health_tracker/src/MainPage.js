@@ -3,6 +3,7 @@ import "./MainPage.css";
 import logo from './loginPage/welcome/logo.png';
 
 function MainPage() {
+  const username = useState("User");
   const [showReminders, setShowReminders] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -12,6 +13,25 @@ function MainPage() {
   });
 
   const testList = ["Blood Pressure", "Glucose Level", "Cholesterol", "Heart Rate"];
+
+  const handleClick = (action) => {
+    switch (action) {
+      case 'trackHealth':
+        console.log('Navigating to Track Health Data...');
+        // Add navigation logic here, e.g., navigate('/track-health');
+        break;
+      case 'predictRisks':
+        console.log('Navigating to Predict Risks...');
+        // Add navigation logic here, e.g., navigate('/predict-risks');
+        break;
+      case 'mentalHealth':
+        console.log('Navigating to Mental Health...');
+        // Add navigation logic here, e.g., navigate('/mental-health');
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
+  };
 
   const handleRemindersClick = () => {
     setShowReminders(!showReminders);
@@ -48,9 +68,9 @@ function MainPage() {
         <nav>
           <ul>
             <li><i className="fas fa-home"></i> Dashboard</li>
-            <li><i className="fas fa-heart"></i> Health Data</li>
-            <li><i className="fas fa-chart-line"></i> Comparisons</li>
+            <li><i className="fas fa-chart-line"></i> Health Data</li>
             <li><i className="fas fa-exclamation-triangle"></i> Risk Predictions</li>
+            <li><i className="fas fa-brain"></i> Mental Health</li>
             <li><i className="fas fa-cog"></i> Settings</li>
           </ul>
         </nav>
@@ -60,7 +80,7 @@ function MainPage() {
        <div className="content">
         {/* Navbar */}
         <header className="navbar">
-          <h1 className="welcome-text">Welcome, User!</h1>
+          <h1 className="welcome-text">Welcome, {username}!</h1>
           <button className="reminder-btn" onClick={handleRemindersClick}>
             <i className="fas fa-bell"></i>
           </button>
@@ -135,22 +155,20 @@ function MainPage() {
           </div>
 
           <div className="action-cards">
-            <div className="card shadow">
-              <h3>Track Health Data</h3>
-              <p>Log and manage your health records efficiently.</p>
-              <button className="btn btn-secondary">Track Now</button>
+            <div className="card shadow" onClick={() => handleClick('trackHealth')}>
+              <i className="fas fa-heartbeat card-icon"></i>
+              <h3>Track Health</h3>
             </div>
-            <div className="card shadow">
-              <h3>Compare Data</h3>
-              <p>Analyze and compare your health stats.</p>
-              <button className="btn btn-secondary">Compare</button>
-            </div>
-            <div className="card shadow">
+            <div className="card shadow" onClick={() => handleClick('predictRisks')}>
+              <i className="fas fa-chart-line card-icon"></i>
               <h3>Predict Risks</h3>
-              <p>Get insights into potential health risks.</p>
-              <button className="btn btn-secondary">Predict Risks</button>
+            </div>
+            <div className="card shadow" onClick={() => handleClick('mentalHealth')}>
+              <i className="fas fa-brain card-icon"></i>
+              <h3>Mental Health</h3>
             </div>
           </div>
+
         </section>
       </div>
     </div>
