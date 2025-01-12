@@ -1,30 +1,18 @@
-import './App.css';
-import LoginPage from './loginPage/LoginPage';
-import SignUp from './signUp/SignUp';
-import MainPage from './MainPage';
-import { useState } from 'react';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import LoginPage from "./loginPage/LoginPage";
+import MainPage from "./MainPage";
 
 function App() {
-  const [showSignUp, setShowSignUp] = useState(false); // Manage which form is displayed
-
-  const handleCreateAccountClick = () => {
-      setShowSignUp(true); // Show the SignUp form
-  };
-
-  const handleCloseSignUp = () => {
-      setShowSignUp(false); // Return to the ForgotPassword form
-  };
   return (
-    <div className="App">
-                  {/* {!showSignUp ? (
-                // Render the ForgotPassword component
-                <LoginPage onCreateAccount={handleCreateAccountClick} />
-            ) : (
-                // Render the SignUp component
-                <SignUp onClose={handleCloseSignUp} />
-            )} */}
-            <MainPage/>
-    </div>
+    <Router>
+      <Routes>
+        {/* ניתוב לעמוד ה-Login */}
+        <Route path="/" element={<LoginPage />} />
+        {/* ניתוב לעמוד ה-MainPage */}
+        <Route path="/mainpage" element={<MainPage />} />
+      </Routes>
+    </Router>
   );
 }
 
