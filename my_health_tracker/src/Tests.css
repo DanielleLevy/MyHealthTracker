@@ -1,0 +1,49 @@
+.tests-container {
+  padding: 20px;
+}
+
+.test-history {
+  margin-bottom: 30px;
+}
+
+.test-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.test-table th,
+.test-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.test-table th {
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+.test-graphs {
+  margin-top: 20px;
+}
+/* Tests.css */
+
+.export-buttons {
+  margin: 10px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.export-btn {
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.export-btn:hover {
+  background-color: #0056b3;
+}

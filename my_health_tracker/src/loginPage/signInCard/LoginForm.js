@@ -21,20 +21,19 @@ function LoginForm() {
       // אם ההתחברות הצליחה
       if (response.data.success) {
         console.log("User logged in:", response.data.user); // הצגת פרטי המשתמש בקונסולה
+        localStorage.setItem("username", username); // שמירת שם המשתמש
         navigate("/mainpage"); // מעבר לעמוד MainPage
       } else {
         setErrorMessage(response.data.message); // הצגת הודעת שגיאה מה-API
       }
     } catch (error) {
-  console.error("Login error:", error.response ? error.response.data : error.message);
-  setErrorMessage(error.response ? error.response.data.message : "Server not reachable");
-}
-
+      console.error("Login error:", error.response ? error.response.data : error.message);
+      setErrorMessage(error.response ? error.response.data.message : "Server not reachable");
+    }
   };
 
   return (
     <form onSubmit={handleLogin}>
-      {/* שדה להזנת שם משתמש */}
       <div className="mb-3 input-group">
         <span className="input-group-text bg-light-brown icon text-maroon">
           <i className="fas fa-user"></i>
@@ -48,7 +47,6 @@ function LoginForm() {
           required
         />
       </div>
-      {/* שדה להזנת סיסמה */}
       <div className="mb-3 input-group">
         <span className="input-group-text bg-light-brown icon text-maroon">
           <i className="fas fa-lock"></i>
@@ -62,9 +60,7 @@ function LoginForm() {
           required
         />
       </div>
-      {/* הצגת הודעת שגיאה אם קיימת */}
       {errorMessage && <p className="text-danger">{errorMessage}</p>}
-      {/* כפתור התחברות */}
       <div className="text-center">
         <button type="submit" className="btn btn-maroon icon w-100 mb-2">
           <i className="fas fa-sign-in-alt me-2"></i>Login

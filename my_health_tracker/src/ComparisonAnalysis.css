@@ -1,0 +1,23 @@
+.comparison-container {
+  margin: 20px;
+  padding: 20px;
+  background: #f4f4f4;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-card {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.comparison-card h3 {
+  margin-bottom: 10px;
+}
+
+.comparison-card p {
+  margin: 5px 0;
+}
