@@ -6,7 +6,6 @@ app = Flask(__name__)
 CORS(app)  # אפשרי CORS לכל היישום
 @app.route('/api/user_data', methods=['GET'])
 def get_user_data():
-    # קבלת פרטי המשתמש המחובר (לדוגמה מתוך session או request)
     username = request.args.get('username')  # לדוגמה, המשתמש המחובר
 
     if not username:
@@ -15,10 +14,10 @@ def get_user_data():
     connection = get_db_connection()  # יצירת חיבור למסד הנתונים
     try:
         with connection.cursor() as cursor:
-            # שאילתא לקבלת נתוני המשתמש הספציפי
+            # עדכון השאילתה לכלול את education_levels
             cursor.execute("""
                 SELECT u.username, u.age, u.gender, u.weight, u.height, 
-                       l.smoking, l.drinking, l.physical_activity
+                       l.smoking, l.drinking, l.physical_activity, l.education_levels
                 FROM Users u
                 LEFT JOIN Life_style l ON u.username = l.user_username
                 WHERE u.username = %s
@@ -41,7 +40,8 @@ def get_user_data():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        connection.close()  # סגירת החיבור
+        connection.close()
+ # סגירת החיבור
 
 
 # פונקציה להתחברות למסד הנתונים
@@ -112,11 +112,14 @@ def compare_tests():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
+            # שאילתא בסיסית לקבלת ממוצעים וסטיית תקן
             query = """
             SELECT 
                 test_name,
                 AVG(value) AS avg_value,
-                STDDEV(value) AS std_dev_value
+                STDDEV(value) AS std_dev_value,
+                MIN(value) AS min_value,
+                MAX(value) AS max_value
             FROM 
                 User_Tests
             JOIN 
@@ -130,13 +133,57 @@ def compare_tests():
                 test_name
             """
             cursor.execute(query, (smoking, drinking, physical_activity, education_levels))
-            result = cursor.fetchall()
-        return jsonify(result), 200
+            basic_result = cursor.fetchall()
+
+            # הכנת התפלגות (distribution) לכל בדיקה
+            results = []
+            for row in basic_result:
+                test_name = row['test_name']
+                min_value = row['min_value']
+                max_value = row['max_value']
+
+                # חלוקת הטווח ל-10 סלים
+                bin_size = (max_value - min_value) / 10
+                bins = [min_value + i * bin_size for i in range(11)]
+
+                # ספירת מספר המשתמשים בכל סל
+                distribution_query = """
+                SELECT 
+                    FLOOR((value - %s) / %s) AS bin,
+                    COUNT(*) AS count
+                FROM 
+                    User_Tests
+                WHERE 
+                    test_name = %s AND
+                    value BETWEEN %s AND %s
+                GROUP BY bin
+                """
+                cursor.execute(distribution_query, (min_value, bin_size, test_name, min_value, max_value))
+                distribution_data = cursor.fetchall()
+
+                # הפקת התפלגות כ-list
+                distribution = [0] * 10
+                for bin_data in distribution_data:
+                    bin_index = int(bin_data['bin'])
+                    if 0 <= bin_index < 10:
+                        distribution[bin_index] = bin_data['count']
+
+                results.append({
+                    'test_name': test_name,
+                    'avg_value': row['avg_value'],
+                    'std_dev_value': row['std_dev_value'],
+                    'min_value': min_value,
+                    'max_value': max_value,
+                    'distribution': distribution,
+                })
+
+        return jsonify(results), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
     finally:
         connection.close()
-
 
 @app.route('/api/get_tests', methods=['GET'])
 def get_tests():
