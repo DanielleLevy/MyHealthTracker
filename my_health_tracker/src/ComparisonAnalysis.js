@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { Scatter } from "react-chartjs-2";
 import axios from "axios";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
+  LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 const testNameMap = {
@@ -90,48 +94,84 @@ const ComparisonAnalysis = ({ userData }) => {
   return (
     <div>
       <h2>Test Results Comparison</h2>
-      {comparisonData.map((test, index) => (
-        <div key={index} style={{ marginBottom: "40px" }}>
-          <h3>{testNameMap[test.test_name] || test.test_name}</h3>
-          <p>{testDescriptionMap[test.test_name]}</p>
-          <Scatter
-            data={{
-              datasets: [
-                {
-                  label: "Population Distribution",
-                  data: test.distribution.map((count, i) => ({
-                    x: test.min_value + (i + 0.5) * ((test.max_value - test.min_value) / 10),
-                    y: count,
-                  })),
-                  backgroundColor: "rgba(75, 192, 192, 0.6)",
-                },
-                {
-                  label: "Your Value",
-                  data: [{ x: test.your_value, y: 0 }],
-                  backgroundColor: "rgba(255, 99, 132, 1)",
-                  pointRadius: 8,
-                },
-              ],
-            }}
-            options={{
-              scales: {
-                x: {
-                  title: {
-                    display: true,
-                    text: "Test Values",
+      {comparisonData.map((test, index) => {
+        // בדיקה אם הנתונים הדרושים קיימים
+        if (!test.histogram || !Array.isArray(test.histogram) || test.histogram.length === 0) {
+          return (
+            <div key={index}>
+              <h3>{testNameMap[test.test_name] || test.test_name}</h3>
+              <p>No data available for this test.</p>
+            </div>
+          );
+        }
+
+        return (
+          <div key={index} style={{ marginBottom: "40px" }}>
+            <h3>{testNameMap[test.test_name] || test.test_name}</h3>
+            <p>{testDescriptionMap[test.test_name] || "No description available."}</p>
+            <Line
+              data={{
+                labels: Array.from(
+                  { length: test.histogram.length },
+                  (_, i) => (i + 1) * (test.bin_size || 1)
+                ),
+                datasets: [
+                  {
+                    label: "Population Distribution",
+                    data: test.histogram,
+                    backgroundColor: "rgba(75, 192, 192, 0.4)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1,
+                    fill: true,
+                  },
+                  {
+                    label: "Your Value",
+                    data: Array(test.histogram.length).fill(null).map((_, idx) =>
+                      idx === Math.floor(test.your_value / (test.bin_size || 1)) ? test.histogram[idx] : null
+                    ),
+                    backgroundColor: "rgba(255, 99, 132, 1)",
+                    borderColor: "rgba(255, 99, 132, 1)",
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointBackgroundColor: "rgba(255, 99, 132, 1)",
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: "top",
+                  },
+                  tooltip: {
+                    callbacks: {
+                      label: function (tooltipItem) {
+                        return `Value: ${tooltipItem.raw}`;
+                      },
+                    },
                   },
                 },
-                y: {
-                  title: {
-                    display: true,
-                    text: "Number of People",
+                scales: {
+                  x: {
+                    title: {
+                      display: true,
+                      text: "Test Values",
+                    },
+                  },
+                  y: {
+                    title: {
+                      display: true,
+                      text: "Number of People",
+                    },
+                    beginAtZero: true,
                   },
                 },
-              },
-            }}
-          />
-        </div>
-      ))}
+              }}
+            />
+            <p style={{ color: "red" }}>Your Value: {test.your_value}</p>
+          </div>
+        );
+      })}
     </div>
   );
 };
