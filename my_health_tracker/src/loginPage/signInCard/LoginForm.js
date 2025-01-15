@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // לשימוש בניווט
+import { useNavigate } from "react-router-dom"; 
 
 function LoginForm() {
   const [username, setUsername] = useState(""); // שם משתמש
@@ -33,7 +33,7 @@ function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleLogin}>
+    <form className="form-log-in" onSubmit={handleLogin}>
       <div className="mb-3 input-group">
         <span className="input-group-text bg-light-brown icon text-maroon">
           <i className="fas fa-user"></i>
