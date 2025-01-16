@@ -47,9 +47,9 @@ def get_user_data():
 # פונקציה להתחברות למסד הנתונים
 def get_db_connection():
     return pymysql.connect(
-        host="localhost",
-        user="root",
-        password="DANI",
+        host="192.168.0.215",
+        user="team_user",
+        password="123",
         database="myhealthtracker",
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -112,7 +112,6 @@ def compare_tests():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # שאילתא בסיסית לקבלת ממוצעים וסטיית תקן
             query = """
             SELECT 
                 test_name,
@@ -233,6 +232,89 @@ def login():
             return jsonify({"success": False, "message": "Invalid username or password"}), 401
     finally:
         connection.close()
+
+
+
+@app.route('/api/update_user_info', methods=['POST'])
+def update_user_info():
+    data = request.json
+    username = data.get('username')
+    age = data.get('age')
+    height = data.get('height')
+    weight = data.get('weight')
+
+    if not username:
+        return jsonify({'error': 'Username is required'}), 400
+
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            # עדכון הנתונים של המשתמש
+            cursor.execute("""
+                UPDATE Users 
+                SET age = %s, height = %s, weight = %s
+                WHERE username = %s
+            """, (age, height, weight, username))
+
+        connection.commit()
+        return jsonify({'success': True, 'message': 'User information updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+def get_age_group(age):
+    age_group_to_range = {
+        1: (0, 4), 2: (5, 9), 3: (10, 14), 4: (15, 19),
+        5: (20, 24), 6: (25, 29), 7: (30, 34), 8: (35, 39),
+        9: (40, 44), 10: (45, 49), 11: (50, 54), 12: (55, 59),
+        13: (60, 64), 14: (65, 69), 15: (70, 74), 16: (75, 79),
+        17: (80, 84), 18: (85, 100)
+    }
+    
+    for group, (min_age, max_age) in age_group_to_range.items():
+        if min_age <= age <= max_age:
+            return group
+    return None  # במקרה שהגיל לא נמצא בטווחים
+
+
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    height = data.get('height')
+    weight = data.get('weight')
+    age = data.get('age')
+    gender = data.get('gender') 
+
+    age_group = get_age_group(age)
+
+    if not (username and password and age and gender is not None):
+        return jsonify({"error": "Missing required fields"}), 400
+
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            # בדיקה אם שם המשתמש כבר קיים
+            cursor.execute("SELECT username FROM Users WHERE username = %s", (username,))
+            if cursor.fetchone():
+                return jsonify({"success": False, "message": "Username already exists"}), 400
+
+            cursor.execute("""
+                INSERT INTO Users (username, password, height, weight, age, age_group, gender) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (username, password, height, weight, age, age_group, gender))
+            
+        connection.commit()
+        return jsonify({"success": True, "message": "User registered successfully", "user": username}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        connection.close()
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
