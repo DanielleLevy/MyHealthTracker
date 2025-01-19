@@ -1,7 +1,7 @@
 import { useState } from "react";
 import './BirthDateField.css';
 
-function BirthDateField(){
+function BirthDateField({setAge}){
     const [birthdate, setBirthdate] = useState(new Date());
 
     const validateAge = (event) => {
@@ -14,7 +14,8 @@ function BirthDateField(){
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < selectedDate.getDate())) {
             age--;
         }
-
+        console.log("age", age);
+        setAge(age);
         event.target.setCustomValidity('');
     }
     return(
