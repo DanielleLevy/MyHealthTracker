@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; 
+import "./SignInCard.css";
+import "../LoginPage.css";
 
 function LoginForm() {
   const [username, setUsername] = useState(""); // שם משתמש

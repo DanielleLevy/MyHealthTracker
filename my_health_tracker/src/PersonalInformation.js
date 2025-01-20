@@ -78,7 +78,7 @@ function PersonalInformation({ userData, setUserData }) {
 
 
 
-            <div className="input-group">
+            <div className="input-group-info">
               <i className="fas fa-ruler-vertical icon"></i>
               <span className="input-label">Height:</span>
               <input
@@ -93,8 +93,8 @@ function PersonalInformation({ userData, setUserData }) {
             </div>
 
             <div className="input-group">
-              <i className="fas fa-weight icon"></i>
-              <span className="input-label">Weight:</span>
+              <i className="fas fa-weight icon-info"></i>
+              <span className="input-label-info">Weight:</span>
 
               <input
                 type="number"

@@ -36,7 +36,7 @@
     gap: 15px;
   }
   
-  .input-group {
+  .input-group-info {
     display: flex;
     align-items: center;
     background: #f9e2de;
@@ -44,13 +44,13 @@
     border-radius: 8px;
   }
   
-  .input-group i {
+  .input-group-info i {
     font-size: 25px;
     color: #800000;
     margin-right: 10px;
   }
   
-  .input-group input {
+  .input-group-info input {
     width: 50%;
     border: none;
     background: none;
@@ -74,13 +74,13 @@
   }
   
   
-  .icon {
+  .icon-info {
     font-size: 18px;
     color: #800000; /* Adjust color to match your design */
     margin-right: 8px;
   }
   
-  .input-label {
+  .input-label-info {
     font-size: 16px;
     font-weight: bold;
     color: #800000; /* Adjust to match icon color */

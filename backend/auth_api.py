@@ -253,7 +253,6 @@ def update_user_info():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # עדכון הנתונים של המשתמש
             cursor.execute("""
                 UPDATE Users 
                 SET age = %s, height = %s, weight = %s
