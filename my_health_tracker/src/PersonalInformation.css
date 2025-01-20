@@ -51,11 +51,12 @@
   }
   
   .input-group input {
-    width: 80%;
+    width: 50%;
     border: none;
     background: none;
     font-size: 16px;
     outline: none;
+    margin-left: 5px;
   }
   
   .btn-update {
@@ -70,5 +71,19 @@
   
   .btn-update:hover {
     background: #006400;
+  }
+  
+  
+  .icon {
+    font-size: 18px;
+    color: #800000; /* Adjust color to match your design */
+    margin-right: 8px;
+  }
+  
+  .input-label {
+    font-size: 16px;
+    font-weight: bold;
+    color: #800000; /* Adjust to match icon color */
+    margin-right: 8px;
   }
   

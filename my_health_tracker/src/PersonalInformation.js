@@ -62,21 +62,25 @@ function PersonalInformation({ userData, setUserData }) {
           </button>
 
           <form onSubmit={handleUpdate} className="update-form">
-            <div className="input-group">
-              <i className="fas fa-calendar-alt icon"></i>
-              <input
-                type="number"
-                name="age"
-                value={formData.age}
-                onChange={handleInputChange}
-                placeholder="Age"
-                disabled={!isEditing}
-                required
-              />
-            </div>
+          <div className="input-group">
+            <i className="fas fa-calendar-alt icon"></i>
+            <span className="input-label">Age:</span>
+            <input
+              type="number"
+              name="age"
+              value={formData.age}
+              onChange={handleInputChange}
+              placeholder="Age"
+              disabled={!isEditing}
+              required
+            />
+          </div>
+
+
 
             <div className="input-group">
               <i className="fas fa-ruler-vertical icon"></i>
+              <span className="input-label">Height:</span>
               <input
                 type="number"
                 name="height"
@@ -90,6 +94,8 @@ function PersonalInformation({ userData, setUserData }) {
 
             <div className="input-group">
               <i className="fas fa-weight icon"></i>
+              <span className="input-label">Weight:</span>
+
               <input
                 type="number"
                 name="weight"

@@ -12,6 +12,9 @@ function MainPage() {
   const [showReminders, setShowReminders] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [healthAlerts, setHealthAlerts] = useState([]);
+  const [userData, setUserData] = useState(null);
+
   const renderTabContent = () => {
   switch (activeTab) {
     case "dashboard":
@@ -59,29 +62,12 @@ function MainPage() {
   }
 };
 
-  const [userData, setUserData] = useState(null);
   const [testList, setTestList] = useState([]); // רשימת בדיקות
   const [formData, setFormData] = useState({
     testName: "",
     date: "",
     value: "",
   });
-
-  const testNameMap = {
-    "BLDS": "Pre-meal Blood Glucose",
-    "BP_HIGH": "Systolic Blood Pressure",
-    "BP_LWST": "Diastolic Blood Pressure",
-    "TOT_CHOLE": "Total Cholesterol",
-    "TRIGLYCERIDE": "Triglycerides",
-    "HDL_CHOLE": "HDL Cholesterol",
-    "LDL_CHOLE": "LDL Cholesterol",
-    "CREATININE": "Serum Creatinine",
-    "HMG": "Hemoglobin",
-    "OLIG_PROTE_CD": "Urinary Protein Excretion",
-    "SGOT_AST": "AST (Liver Function)",
-    "SGPT_ALT": "ALT (Liver Function)",
-    "GAMMA_GTP": "Gamma GTP (Liver Function)"
-  };
 
   useEffect(() => {
     if (!username || username === "User") {
@@ -99,6 +85,7 @@ function MainPage() {
 
           // Fetch user tests after receiving user data
           fetchUserTests(username);
+          fetchHealthAlerts(username); // קריאה לקבלת התראות מהשרת
         }
       })
       .catch((error) => {
@@ -117,10 +104,20 @@ function MainPage() {
       .catch((error) => {
         console.error("Error fetching user tests:", error);
       });
+};
+
+
+  const fetchHealthAlerts = (username) => {
+    axios.get("http://localhost:5001/api/user_health_alerts", { params: { username } })
+      .then(response => {
+        if (response.data && response.data.alerts) {
+          setHealthAlerts(response.data.alerts);
+        }
+      })
+      .catch(error => console.error("Error fetching health alerts:", error));
   };
 
-  const healthAlerts = userData && userData.tests ? getHealthAlerts(userData.tests) : [];
-
+  
   const calculateBMI = (height, weight) => {
     if (!height || !weight) return "N/A";
     const heightInMeters = height / 100;
@@ -133,13 +130,14 @@ function MainPage() {
     axios.get('http://localhost:5001/api/get_tests')
       .then((response) => {
         if (response.data && response.data.tests) {
-          setTestList(response.data.tests || []);
+          setTestList(response.data.tests || []); // עדכון רשימת הבדיקות עם שם הבדיקה המלא
         }
       })
       .catch((error) => {
         console.error("Error fetching test list:", error);
       });
-  };
+};
+
 
   const handleCloseAddTestModal = () => {
     setShowAddTestModal(false);
@@ -254,7 +252,7 @@ function MainPage() {
                     <option value="">Select Test</option>
                     {testList.map((test, index) => (
                       <option key={index} value={test}>
-                        {testNameMap[test] || test}
+                         {test.full_name}
                       </option>
                     ))}
                   </select>
@@ -291,41 +289,6 @@ function MainPage() {
       </div>
     </div>
   );
-}
-
-function getHealthAlerts(tests) {
-  const latestTests = {};
-
-  tests.forEach((test) => {
-    if (!latestTests[test.test_name] || new Date(test.test_date) > new Date(latestTests[test.test_name].test_date)) {
-      latestTests[test.test_name] = test;
-    }
-  });
-
-  const alerts = [];
-
-  Object.values(latestTests).forEach((test) => {
-    if (test.test_name === "BP_HIGH" && test.value > 120) {
-      alerts.push("High systolic blood pressure detected!");
-    }
-    if (test.test_name === "BP_LWST" && test.value > 80) {
-      alerts.push("High diastolic blood pressure detected!");
-    }
-    if (test.test_name === "LDL_CHOLE" && test.value > 170) {
-      alerts.push("High LDL Cholesterol detected!");
-    }
-    if (test.test_name === "HDL_CHOLE" && test.value < 30) {
-      alerts.push("Low HDL Cholesterol detected!");
-    }
-    if (test.test_name === "TRIGLYCERIDE" && test.value > 150) {
-      alerts.push("High Triglyceride levels detected!");
-    }
-    if (test.test_name === "CREATININE" && (test.value < 0.8 || test.value > 1.7)) {
-      alerts.push("Abnormal Creatinine levels detected!");
-    }
-  });
-
-  return alerts;
 }
 
 export default MainPage;

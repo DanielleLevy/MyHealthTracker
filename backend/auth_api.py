@@ -78,6 +78,8 @@ def add_test():
         return jsonify({'error': str(e)}), 500
     finally:
         connection.close()
+
+
 @app.route('/api/get_user_tests', methods=['GET'])
 def get_user_tests():
     username = request.args.get('username')  # קבלת שם המשתמש מהבקשה
@@ -189,10 +191,12 @@ def get_tests():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # שאילתא לשליפת רשימת הבדיקות
-            cursor.execute("SELECT DISTINCT test_name FROM User_Tests")
+            # שאילתא לשליפת רשימת הבדיקות עם השם המלא שלהן
+            cursor.execute("SELECT test_name, full_name FROM Tests")
             tests = cursor.fetchall()
-        return jsonify({'tests': [test['test_name'] for test in tests]}), 200
+
+        # החזרת רשימת הבדיקות כולל שם הבדיקה המלא
+        return jsonify({'tests': tests}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -315,6 +319,82 @@ def signup():
     finally:
         connection.close()
 
+@app.route('/api/user_health_alerts', methods=['GET'])
+def get_health_alerts():
+    username = request.args.get('username')
+
+    if not username:
+        return jsonify({"error": "Missing required fields"}), 400
+    
+    print(f"Fetching health alerts for user '{username}'")
+    connection = get_db_connection()
+    try:
+        cursor = connection.cursor()
+
+        # בדיקת קבוצת גיל
+        cursor.execute("SELECT age_group FROM Users WHERE username = %s", (username))
+        user = cursor.fetchone()
+
+        if not user:
+            print(f"User '{username}' not found in Users table")
+            return jsonify({"success": False, "message": "User not found"}), 404
+        
+        age_group_id = user['age_group']
+        print(f"User '{username}' belongs to age group {age_group_id}")
+
+        # בדיקת בדיקות אחרונות לכל test_name
+        cursor.execute("""
+            SELECT t.test_name, ts.full_name, t.test_date, t.value, v.lower_limit, v.upper_limit 
+            FROM User_Tests t
+            JOIN Tests_Values v ON t.test_name = v.test_name 
+            JOIN Tests ts ON t.test_name = ts.test_name 
+            WHERE t.username = %s AND v.age_group = %s
+            AND t.test_date = (
+                SELECT MAX(t2.test_date) 
+                FROM User_Tests t2 
+                WHERE t2.username = t.username AND t2.test_name = t.test_name
+            )
+            ORDER BY t.test_date DESC
+        """, (username, age_group_id))
+
+        test_results = cursor.fetchall()
+        print(f"Test results found for user '{username}': {test_results}")
+
+        if not test_results:
+            print(f"No test results found for user '{username}' in age group {age_group_id}")
+            return jsonify({"success": True, "alerts": []}), 200
+
+        alerts = []
+        for test in test_results:
+            test_name = test['full_name']
+
+            # ערכים מתוך מסד הנתונים
+            try:
+                test_value = float(test['value']) if test['value'] is not None else None
+                lower_limit = float(test['lower_limit']) if test['lower_limit'] is not None else None
+                upper_limit = float(test['upper_limit']) if test['upper_limit'] is not None else None
+
+            except ValueError as ve:
+                print(f"ValueError for test {test_name}: {str(ve)}")
+                continue
+
+            # בדיקה אם יש חריגה
+            if upper_limit is not None and test_value > upper_limit:
+                alerts.append(f"High {test_name} detected!")
+            if lower_limit is not None and test_value < lower_limit:
+                alerts.append(f"Low {test_name} detected!")
+
+        print(f"Alerts generated for user '{username}': {alerts}")
+
+        return jsonify({"success": True, "alerts": alerts}), 200
+
+    except Exception as e:
+        print(f"Error fetching health alerts: {str(e)}")  # ✅ הדפסת השגיאה
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
