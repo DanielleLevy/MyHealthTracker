@@ -22,11 +22,10 @@ function MainPage() {
     case "dashboard":
       return (
         <div>
-          <h2>Dashboard</h2>
+          <h2 className="title-sum">Health Summary</h2>
+          <p>Let's take a look at your most recent test results!</p>
           <section className="dashboard">
             <div className="overview-card shadow">
-              <h2>Health Summary</h2>
-              <p>Let's take a look at your most recent test results!</p>
               {userData?.testSummary?.length > 0 ? (
                 userData.testSummary.map((test, index) => <TestChart key={index} test={test} />)
               ) : (
@@ -179,7 +178,7 @@ function MainPage() {
         <nav>
           <ul>
             <li className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}>
-              <i className="fas fa-home"></i> Dashboard
+              <i className="fas fa-home"></i> Health Summary
             </li>
             <li className={activeTab === "tests" ? "active" : ""} onClick={() => setActiveTab("tests")}>
               <i className="fas fa-vial"></i> Tests

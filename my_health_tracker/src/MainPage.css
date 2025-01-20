@@ -417,3 +417,8 @@ body {
     font-weight: bold;
   }
   
+  .title-sum{
+    text-align: left;
+    margin-top: 15px;
+    font-size: 40px;
+  }
