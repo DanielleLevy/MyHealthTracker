@@ -6,6 +6,7 @@ import Tests from "./Tests";
 import ComparisonAnalysis from "./ComparisonAnalysis";
 import TestChart from "./TestChart"; 
 import PersonalInformation from "./PersonalInformation";
+import LifestyleQuestionnaire from "./LifestyleQuestionnaire";
 
 
 function MainPage() {
@@ -40,8 +41,8 @@ function MainPage() {
       return <Tests tests={userData?.tests || []} />;
     case "riskPredictions":
       return <div>Risk Predictions Content</div>;
-    case "mentalHealth":
-      return <div>Mental Health Content</div>;
+    case "lifeStyle":
+      return <LifestyleQuestionnaire username={username} />;
     case "comparisonAnalysis":
       return <ComparisonAnalysis userData={userData} />;
     case "PersonalInformation":
@@ -189,8 +190,8 @@ function MainPage() {
             <li className={activeTab === "comparisonAnalysis" ? "active" : ""} onClick={() => setActiveTab("comparisonAnalysis")}>
               <i className="fas fa-chart-bar"></i> Comparison Analysis
             </li>
-            <li className={activeTab === "mentalHealth" ? "active" : ""} onClick={() => setActiveTab("mentalHealth")}>
-              <i className="fas fa-brain"></i> Mental Health
+            <li className={activeTab === "lifeStyle" ? "active" : ""} onClick={() => setActiveTab("lifeStyle")}>
+              <i className="fas fa-brain"></i> Life Style
             </li>
             <li className={activeTab === "PersonalInformation" ? "active" : ""} onClick={() => setActiveTab("PersonalInformation")}>
               <i className="bi bi-info-circle"></i> Personal Information

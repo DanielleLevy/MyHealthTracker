@@ -117,6 +117,7 @@ function PersonalInformation({ userData, setUserData }) {
       ) : (
         <p>Loading personal information...</p>
       )}
+
     </div>
   );
 }

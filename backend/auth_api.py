@@ -476,5 +476,66 @@ def get_user_test_summary():
     finally:
         connection.close()
 
+@app.route('/api/update_lifestyle_info', methods=['POST'])
+def update_lifestyle():
+    data = request.json
+    username = data.get("username")
+    marital_status = data.get("marital_status")
+    education_levels = data.get("education_levels")
+    children = data.get("children")
+    physical_activity = data.get("physical_activity")
+    work = data.get("work")
+    dietary_habit = data.get("dietary_habit")
+    sleep_pattern = data.get("sleep_pattern")
+    drinking = data.get("drinking")
+    smoking = data.get("smoking")
+
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
+
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO Life_style (user_username, marital_status, education_levels, children, physical_activity, work, dietary_habit, sleep_pattern, drinking, smoking)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                marital_status=VALUES(marital_status),
+                education_levels=VALUES(education_levels),
+                children=VALUES(children),
+                physical_activity=VALUES(physical_activity),
+                work=VALUES(work),
+                dietary_habit=VALUES(dietary_habit),
+                sleep_pattern=VALUES(sleep_pattern),
+                drinking=VALUES(drinking),
+                smoking=VALUES(smoking)
+            """, (username, marital_status, education_levels, children, physical_activity, work, dietary_habit, sleep_pattern, drinking, smoking))
+            connection.commit()
+        return jsonify({"message": "Lifestyle information updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/api/get_lifestyle_info', methods=['GET'])
+def get_lifestyle():
+    username = request.args.get("username")
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
+
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Life_style WHERE user_username = %s", (username,))
+            row = cursor.fetchone()
+        if row:
+            return jsonify(row), 200
+        else:
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
