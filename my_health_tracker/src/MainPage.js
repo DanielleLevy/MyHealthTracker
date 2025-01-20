@@ -4,6 +4,7 @@ import "./MainPage.css";
 import logo from './loginPage/welcome/logo.png';
 import Tests from "./Tests"; 
 import ComparisonAnalysis from "./ComparisonAnalysis";
+import TestChart from "./TestChart"; 
 import PersonalInformation from "./PersonalInformation";
 
 
@@ -21,32 +22,20 @@ function MainPage() {
       return (
         <div>
           <h2>Dashboard</h2>
-
           <section className="dashboard">
             <div className="overview-card shadow">
-              <h2>Health Overview</h2>
-              <p>View your recent health data trends.</p>
-              <button className="btn btn-primary">View Details</button>
-            </div>
-
-            <div className="action-cards">
-              <div className="card shadow" onClick={() => console.log('Track Health')}>
-                <i className="fas fa-heartbeat card-icon"></i>
-                <h3>Track Health</h3>
-              </div>
-              <div className="card shadow" onClick={() => console.log('Predict Risks')}>
-                <i className="fas fa-chart-line card-icon"></i>
-                <h3>Predict Risks</h3>
-              </div>
-              <div className="card shadow" onClick={() => console.log('Mental Health')}>
-                <i className="fas fa-brain card-icon"></i>
-                <h3>Mental Health</h3>
-              </div>
+              <h2>Health Summary</h2>
+              <p>Let's take a look at your most recent test results!</p>
+              {userData?.testSummary?.length > 0 ? (
+                userData.testSummary.map((test, index) => <TestChart key={index} test={test} />)
+              ) : (
+                <p>No recent tests available.</p>
+              )}
             </div>
           </section>
         </div>
-
       );
+    
     case "tests":
       return <Tests tests={userData?.tests || []} />;
     case "riskPredictions":
@@ -85,7 +74,8 @@ function MainPage() {
 
           // Fetch user tests after receiving user data
           fetchUserTests(username);
-          fetchHealthAlerts(username); // קריאה לקבלת התראות מהשרת
+          fetchHealthAlerts(username); 
+          fetchHealthSummary(username);
         }
       })
       .catch((error) => {
@@ -116,7 +106,16 @@ function MainPage() {
       })
       .catch(error => console.error("Error fetching health alerts:", error));
   };
-
+  
+  const fetchHealthSummary = (username) => {
+    axios.get("http://localhost:5001/api/user_test_summary", { params: { username } })
+    .then(response => {
+      if (response.data) {
+        setUserData(prevData => ({ ...prevData, testSummary: response.data.tests }));
+      }
+    })
+    .catch(error => console.error("Error fetching test summary:", error));
+  };
   
   const calculateBMI = (height, weight) => {
     if (!height || !weight) return "N/A";

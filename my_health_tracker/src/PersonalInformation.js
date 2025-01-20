@@ -62,9 +62,9 @@ function PersonalInformation({ userData, setUserData }) {
           </button>
 
           <form onSubmit={handleUpdate} className="update-form">
-          <div className="input-group">
+          <div className="input-group-info">
             <i className="fas fa-calendar-alt icon"></i>
-            <span className="input-label">Age:</span>
+            <span className="input-label-info">Age:</span>
             <input
               type="number"
               name="age"
@@ -80,7 +80,7 @@ function PersonalInformation({ userData, setUserData }) {
 
             <div className="input-group-info">
               <i className="fas fa-ruler-vertical icon"></i>
-              <span className="input-label">Height:</span>
+              <span className="input-label-info">Height:</span>
               <input
                 type="number"
                 name="height"
@@ -92,7 +92,7 @@ function PersonalInformation({ userData, setUserData }) {
               />
             </div>
 
-            <div className="input-group">
+            <div className="input-group-info">
               <i className="fas fa-weight icon-info"></i>
               <span className="input-label-info">Weight:</span>
 

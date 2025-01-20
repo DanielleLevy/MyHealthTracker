@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import pymysql
 from flask_cors import CORS  # ייבוא CORS
+from datetime import datetime, date
 
 app = Flask(__name__)
 CORS(app)  # אפשרי CORS לכל היישום
@@ -325,7 +326,6 @@ def get_health_alerts():
     if not username:
         return jsonify({"error": "Missing required fields"}), 400
     
-    print(f"Fetching health alerts for user '{username}'")
     connection = get_db_connection()
     try:
         cursor = connection.cursor()
@@ -339,7 +339,6 @@ def get_health_alerts():
             return jsonify({"success": False, "message": "User not found"}), 404
         
         age_group_id = user['age_group']
-        print(f"User '{username}' belongs to age group {age_group_id}")
 
         # בדיקת בדיקות אחרונות לכל test_name
         cursor.execute("""
@@ -357,7 +356,6 @@ def get_health_alerts():
         """, (username, age_group_id))
 
         test_results = cursor.fetchall()
-        print(f"Test results found for user '{username}': {test_results}")
 
         if not test_results:
             print(f"No test results found for user '{username}' in age group {age_group_id}")
@@ -383,16 +381,99 @@ def get_health_alerts():
             if lower_limit is not None and test_value < lower_limit:
                 alerts.append(f"Low {test_name} detected!")
 
-        print(f"Alerts generated for user '{username}': {alerts}")
-
         return jsonify({"success": True, "alerts": alerts}), 200
 
     except Exception as e:
-        print(f"Error fetching health alerts: {str(e)}")  # ✅ הדפסת השגיאה
-        return jsonify({"error": str(e)}), 500
+        print(f"Error fetching health alerts: {str(e)}")  
 
     finally:
         cursor.close()
+        connection.close()
+
+@app.route('/api/user_test_summary', methods=['GET'])
+def get_user_test_summary():
+    username = request.args.get('username')
+    
+    if not username:
+        return jsonify({'error': 'Username is required'}), 400
+
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            # Get the user's age group
+            cursor.execute("SELECT age_group FROM Users WHERE username = %s", (username,))
+            user = cursor.fetchone()
+            
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+            
+            age_group_id = user['age_group']
+
+            # Get the latest test results for the user with normal ranges
+            cursor.execute("""
+                SELECT 
+                    t.test_name, 
+                    ts.full_name,
+                    t.test_date, 
+                    t.value, 
+                    v.lower_limit, 
+                    v.upper_limit 
+                FROM User_Tests t
+                JOIN Tests_Values v ON t.test_name = v.test_name 
+                JOIN Tests ts ON t.test_name = ts.test_name 
+                WHERE t.username = %s AND v.age_group = %s
+                AND t.test_date = (
+                    SELECT MAX(t2.test_date) 
+                    FROM User_Tests t2 
+                    WHERE t2.username = t.username AND t2.test_name = t.test_name
+                )
+                ORDER BY t.test_date DESC
+            """, (username, age_group_id))
+
+            test_results = cursor.fetchall()
+
+            if not test_results:
+                return jsonify({'tests': []}), 200
+
+            tests_summary = []
+            for test in test_results:
+                test_name = test['full_name']
+                last_test_date = test['test_date']
+
+                # Ensure last_test_date is converted to a datetime object
+                if isinstance(last_test_date, date):
+                    last_test_date = datetime.combine(last_test_date, datetime.min.time())
+
+                test_value = float(test['value']) if test['value'] else None
+                lower_limit = float(test['lower_limit']) if test['lower_limit'] else None
+                upper_limit = float(test['upper_limit']) if test['upper_limit'] else None
+
+                # Determine if value is out of range
+                is_out_of_range = (
+                    (upper_limit is not None and test_value > upper_limit) or
+                    (lower_limit is not None and test_value < lower_limit)
+                )
+
+                # Determine if the test is overdue (>1 year)
+                is_overdue = (datetime.now() - last_test_date).days > 365
+
+                test_data = {
+                    'test_name': test_name,
+                    'latest_value': test_value,
+                    'min_range': lower_limit,
+                    'max_range': upper_limit,
+                    'last_test_date': last_test_date.strftime('%Y-%m-%d'),
+                    'is_out_of_range': is_out_of_range,
+                    'is_overdue': is_overdue
+                }
+                tests_summary.append(test_data)
+
+            return jsonify({'tests': tests_summary}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
         connection.close()
 
 if __name__ == '__main__':
