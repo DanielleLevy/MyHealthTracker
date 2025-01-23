@@ -17,7 +17,7 @@ def get_user_data():
         with connection.cursor() as cursor:
             # עדכון השאילתה לכלול את education_levels
             cursor.execute("""
-                SELECT u.username, u.age, u.gender, u.weight, u.height, 
+                SELECT u.username, u.age, u.gender, u.weight, u.height,u.age_group, 
                        l.smoking, l.drinking, l.physical_activity, l.education_levels
                 FROM Users u
                 LEFT JOIN Life_style l ON u.username = l.user_username
@@ -48,9 +48,9 @@ def get_user_data():
 # פונקציה להתחברות למסד הנתונים
 def get_db_connection():
     return pymysql.connect(
-        host="192.168.0.215",
-        user="team_user",
-        password="123",
+        host="localhost",
+        user="root",
+        password="DANI",
         database="myhealthtracker",
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -104,86 +104,117 @@ def get_user_tests():
 
 @app.route('/api/compare_tests', methods=['GET'])
 def compare_tests():
+    connection = get_db_connection()
     smoking = request.args.get('smoking')
     drinking = request.args.get('drinking')
     physical_activity = request.args.get('physical_activity')
     education_levels = request.args.get('education_levels')
+    age_group = request.args.get('age_group')
 
-    if not (smoking and drinking and physical_activity and education_levels):
-        return jsonify({'error': 'Missing lifestyle parameters'}), 400
+    if not all([smoking, drinking, physical_activity, education_levels, age_group]):
+        return jsonify({"error": "Missing required parameters"}), 400
 
-    connection = get_db_connection()
+    query = """
+   SELECT 
+    ut.test_name,
+    AVG(ut.value) AS avg_value,
+    STDDEV(ut.value) AS std_dev,
+    MIN(ut.value) AS min_value,
+    MAX(ut.value) AS max_value,
+    tv.lower_limit,
+    tv.upper_limit,
+    JSON_ARRAYAGG(FLOOR(ut.value / 10) * 10) AS histogram
+FROM 
+    User_Tests ut
+JOIN 
+    Users u ON ut.username = u.username
+JOIN 
+    Life_style ls ON u.username = ls.user_username
+JOIN 
+    Tests_Values tv ON ut.test_name = tv.test_name
+JOIN (SELECT username FROM Users ORDER BY RAND() LIMIT 1000) AS random_users ON u.username = random_users.username -- שימוש ב-JOIN
+WHERE 
+    ls.smoking = %s
+    AND ls.drinking = %s
+    AND ls.physical_activity = %s
+    AND ls.education_levels = %s
+    AND tv.age_group = %s
+GROUP BY 
+    ut.test_name, tv.lower_limit, tv.upper_limit;
+    """
+
     try:
         with connection.cursor() as cursor:
-            query = """
-            SELECT 
-                test_name,
-                AVG(value) AS avg_value,
-                STDDEV(value) AS std_dev_value,
-                MIN(value) AS min_value,
-                MAX(value) AS max_value
-            FROM 
-                User_Tests
-            JOIN 
-                Life_style ON User_Tests.username = Life_style.user_username
-            WHERE 
-                smoking = %s AND
-                drinking = %s AND
-                physical_activity = %s AND
-                education_levels = %s
-            GROUP BY 
-                test_name
-            """
-            cursor.execute(query, (smoking, drinking, physical_activity, education_levels))
-            basic_result = cursor.fetchall()
+            cursor.execute(query, (smoking, drinking, physical_activity, education_levels, age_group))
+            results = cursor.fetchall()
 
-            # הכנת התפלגות (distribution) לכל בדיקה
-            results = []
-            for row in basic_result:
-                test_name = row['test_name']
-                min_value = row['min_value']
-                max_value = row['max_value']
-
-                # חלוקת הטווח ל-10 סלים
-                bin_size = (max_value - min_value) / 10
-                bins = [min_value + i * bin_size for i in range(11)]
-
-                # ספירת מספר המשתמשים בכל סל
-                distribution_query = """
-                SELECT 
-                    FLOOR((value - %s) / %s) AS bin,
-                    COUNT(*) AS count
-                FROM 
-                    User_Tests
-                WHERE 
-                    test_name = %s AND
-                    value BETWEEN %s AND %s
-                GROUP BY bin
-                """
-                cursor.execute(distribution_query, (min_value, bin_size, test_name, min_value, max_value))
-                distribution_data = cursor.fetchall()
-
-                # הפקת התפלגות כ-list
-                distribution = [0] * 10
-                for bin_data in distribution_data:
-                    bin_index = int(bin_data['bin'])
-                    if 0 <= bin_index < 10:
-                        distribution[bin_index] = bin_data['count']
-
-                results.append({
-                    'test_name': test_name,
-                    'avg_value': row['avg_value'],
-                    'std_dev_value': row['std_dev_value'],
-                    'min_value': min_value,
-                    'max_value': max_value,
-                    'distribution': distribution,
-                })
+        # בדיקת היסטוגרמות ריקות
+        for result in results:
+            if not result['histogram']:
+                print(f"Warning: Histogram for test {result['test_name']} is empty.")
+        print("Results from database:", results)  # הדפסה חשובה!
 
         return jsonify(results), 200
-
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error executing query: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        connection.close()
 
+@app.route('/api/comparison_analysis', methods=['GET'])
+def comparison_analysis():
+    connection = get_db_connection()
+
+    # קבלת פרמטרים מהבקשה
+    smoking = request.args.get('smoking')
+    drinking = request.args.get('drinking')
+    physical_activity = request.args.get('physical_activity')
+    education_levels = request.args.get('education_levels')
+    age_group = request.args.get('age_group')
+
+    # בדיקה שכל הפרמטרים הדרושים קיימים
+    if not all([smoking, drinking, physical_activity, education_levels, age_group]):
+        return jsonify({"error": "Missing required parameters"}), 400
+
+    # שאילתת SQL לחישוב הערכים הממוצעים ותוצאות השוואתיות
+    query = """
+    SELECT 
+        ut.test_name,
+        AVG(ut.value) AS avg_value,
+        STDDEV(ut.value) AS std_dev,
+        MIN(ut.value) AS min_value,
+        MAX(ut.value) AS max_value,
+        tv.lower_limit,
+        tv.upper_limit
+    FROM 
+        User_Tests ut
+    JOIN 
+        Users u ON ut.username = u.username
+    JOIN 
+        Life_style ls ON u.username = ls.user_username
+    JOIN 
+        Tests_Values tv ON ut.test_name = tv.test_name
+    WHERE 
+        ls.smoking = %s
+        AND ls.drinking = %s
+        AND ls.physical_activity = %s
+        AND ls.education_levels = %s
+        AND tv.age_group = %s
+    GROUP BY 
+        ut.test_name, tv.lower_limit, tv.upper_limit;
+    """
+
+    try:
+        # ביצוע השאילתה
+        print(f"Executing query with parameters: {smoking}, {drinking}, {physical_activity}, {education_levels}, {age_group}")
+        with connection.cursor() as cursor:
+            cursor.execute(query, (smoking, drinking, physical_activity, education_levels, age_group))
+            results = cursor.fetchall()
+            print("Query Results:", results)  # דיבוג: הדפסת התוצאות
+        return jsonify(results), 200
+    except Exception as e:
+        print("Error executing query:", e)  # הדפסת שגיאה
+        return jsonify({"error": str(e)}), 500
     finally:
         connection.close()
 
@@ -192,14 +223,49 @@ def get_tests():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # שאילתא לשליפת רשימת הבדיקות עם השם המלא שלהן
-            cursor.execute("SELECT test_name, full_name FROM Tests")
+            # שאילתא לשליפת שם ותיאור של הבדיקות
+            cursor.execute("SELECT test_name, full_name, description FROM Tests")
             tests = cursor.fetchall()
-
-        # החזרת רשימת הבדיקות כולל שם הבדיקה המלא
+            print("API output:", tests)  # הדפסת המידע בקונסול לבדיקה
         return jsonify({'tests': tests}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+@app.route('/api/get_test_limits', methods=['GET'])
+def get_test_limits():
+    username = request.args.get('username')
+    test_name = request.args.get('test_name')
+
+    if not username or not test_name:
+        return jsonify({"error": "Username and test_name are required"}), 400
+
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            # שליפת קבוצת הגיל של המשתמש
+            cursor.execute("SELECT age_group FROM Users WHERE username = %s", (username,))
+            user = cursor.fetchone()
+
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+
+            age_group = user['age_group']
+
+            # שליפת המינימום והמקסימום עבור הבדיקה וקבוצת הגיל
+            cursor.execute("""
+                SELECT lower_limit, upper_limit 
+                FROM Tests_Values 
+                WHERE test_name = %s AND age_group = %s
+            """, (test_name, age_group))
+            limits = cursor.fetchone()
+
+            if not limits:
+                return jsonify({"error": "Limits not found for the given test and age group"}), 404
+
+            return jsonify({"lower_limit": limits['lower_limit'], "upper_limit": limits['upper_limit']}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     finally:
         connection.close()
 

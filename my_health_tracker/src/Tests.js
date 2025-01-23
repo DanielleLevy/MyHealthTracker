@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -14,7 +14,9 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
+import annotationPlugin from "chartjs-plugin-annotation";
 
 ChartJS.register(
   CategoryScale,
@@ -23,58 +25,38 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
-const testNameMap = {
-  "BLDS": "Pre-meal Blood Glucose",
-  "BP_HIGH": "Systolic Blood Pressure",
-  "BP_LWST": "Diastolic Blood Pressure",
-  "TOT_CHOLE": "Total Cholesterol",
-  "TRIGLYCERIDE": "Triglycerides",
-  "HDL_CHOLE": "HDL Cholesterol",
-  "LDL_CHOLE": "LDL Cholesterol",
-  "CREATININE": "Serum Creatinine",
-  "HMG": "Hemoglobin",
-  "OLIG_PROTE_CD": "Urinary Protein Excretion",
-  "SGOT_AST": "AST (Liver Function)",
-  "SGPT_ALT": "ALT (Liver Function)",
-  "GAMMA_GTP": "Gamma GTP (Liver Function)"
-};
-
-const testDescriptionMap = {
-  "BLDS": "Measures blood glucose levels before a meal.",
-  "BP_HIGH": "Indicates systolic blood pressure, measuring the pressure in arteries during heartbeats.",
-  "BP_LWST": "Indicates diastolic blood pressure, measuring the pressure in arteries between heartbeats.",
-  "TOT_CHOLE": "Measures total cholesterol levels in the blood.",
-  "TRIGLYCERIDE": "Indicates triglyceride levels, a type of fat found in the blood.",
-  "HDL_CHOLE": "Measures 'good' HDL cholesterol, which helps remove other forms of cholesterol.",
-  "LDL_CHOLE": "Measures 'bad' LDL cholesterol, which can build up in arteries.",
-  "CREATININE": "Indicates kidney function by measuring creatinine levels in the blood.",
-  "HMG": "Measures hemoglobin levels, important for oxygen transport in the blood.",
-  "OLIG_PROTE_CD": "Indicates protein excretion in urine, a sign of kidney health.",
-  "SGOT_AST": "Measures AST enzyme levels, indicating liver function.",
-  "SGPT_ALT": "Measures ALT enzyme levels, another marker of liver function.",
-  "GAMMA_GTP": "Measures GGT enzyme levels, related to liver and bile duct function."
-};
-
-const Tests = ({ tests }) => {
+const Tests = ({ tests, testList, fetchTestLimits }) => {
   console.log("Received tests:", tests);
+  console.log("Received testList:", testList);
 
-  // Handle case with no tests
-  if (!tests || tests.length === 0) {
-    return <p>No test data available. Please add tests.</p>;
-  }
+  const [limitsMap, setLimitsMap] = useState({}); // לשמירת המגבלות
 
-  // Get unique test names
-  const uniqueTestNames = [...new Set(tests.map((test) => test.test_name))];
+  useEffect(() => {
+    // Fetch limits for all unique tests
+    const fetchAllLimits = async () => {
+      const newLimitsMap = {};
+      const uniqueTestNames = [...new Set(tests.map((test) => test.test_name))];
+      for (const testName of uniqueTestNames) {
+        const limits = await fetchTestLimits(testName);
+        newLimitsMap[testName] = limits;
+      }
+      setLimitsMap(newLimitsMap);
+    };
+
+    fetchAllLimits();
+  }, [tests, fetchTestLimits]);
+
   const exportDataAsPDF = () => {
     const doc = new jsPDF();
     doc.text("Health Checkup Report", 14, 10);
     doc.autoTable({
       head: [["Test Name", "Value", "Date"]],
       body: tests.map((test) => [
-        testNameMap[test.test_name] || test.test_name,
+        test.test_name,
         test.value,
         new Date(test.test_date).toLocaleDateString(),
       ]),
@@ -84,7 +66,7 @@ const Tests = ({ tests }) => {
 
   const exportDataAsExcel = () => {
     const data = tests.map((test) => ({
-      "Test Name": testNameMap[test.test_name] || test.test_name,
+      "Test Name": test.test_name,
       Value: test.value,
       Date: new Date(test.test_date).toLocaleDateString(),
     }));
@@ -94,52 +76,129 @@ const Tests = ({ tests }) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Tests");
     XLSX.writeFile(workbook, "Health_Checkup_Report.xlsx");
   };
-  return (
-      <div className="tests-container">
-        <h1>Tests Overview</h1>
-        <div className="export-buttons">
-          <button className="export-btn" onClick={() => exportDataAsPDF()}>
-            Export as PDF
-          </button>
-          <button className="export-btn" onClick={() => exportDataAsExcel()}>
-            Export as Excel
-          </button>
-        </div>
-        {uniqueTestNames.map((testName) => {
-          const testData = tests.filter((test) => test.test_name === testName);
-          const graphData = {
-            labels: testData.map((test) =>
-                new Date(test.test_date).toLocaleDateString()
-            ),
-            datasets: [
-              {
-                label: testNameMap[testName] || testName,
-                data: testData.map((test) => Number(test.value)),
-                borderColor: "rgba(75,192,192,1)",
-                borderWidth: 2,
-                tension: 0.3,
-                pointBackgroundColor: testData.map((test) =>
-                    Number(test.value) > 150 || Number(test.value) < 50
-                        ? "red"
-                        : "green"
-                ),
-                fill: false,
-              },
-            ],
-          };
 
-          return (
-              <div key={testName} className="test-section">
-                <h3>{testNameMap[testName] || testName}</h3>
-                <p>{testDescriptionMap[testName]}</p>
-                <Line data={graphData} options={{responsive: true}}/>
-                <p>
-                  <strong>Most Recent Value:</strong> {testData[testData.length - 1].value}
-                </p>
-              </div>
-          );
-        })}
+  return (
+    <div className="tests-container">
+      <h1>Tests Overview</h1>
+      <div className="export-buttons">
+        <button className="export-btn" onClick={exportDataAsPDF}>
+          Export as PDF
+        </button>
+        <button className="export-btn" onClick={exportDataAsExcel}>
+          Export as Excel
+        </button>
       </div>
+      {[...new Set(tests.map((test) => test.test_name))].map((testName) => {
+        const testData = tests
+          .filter((test) => test.test_name === testName)
+          .sort((a, b) => new Date(a.test_date) - new Date(b.test_date));
+
+        const testInfo = testList.find((test) => test.test_name === testName);
+        const limits = limitsMap[testName] || {};
+
+        const graphData = {
+          labels: testData.map((test) =>
+            new Date(test.test_date).toLocaleDateString()
+          ),
+          datasets: [
+            {
+              label: testName,
+              data: testData.map((test) => Number(test.value)),
+              borderColor: "rgba(75,192,192,1)",
+              borderWidth: 2,
+              tension: 0.3,
+              pointBackgroundColor: testData.map((test) =>
+                Number(test.value) > (limits.upper_limit || Infinity) ||
+                Number(test.value) < (limits.lower_limit || -Infinity)
+                  ? "red"
+                  : "green"
+              ),
+              fill: false,
+            },
+          ],
+        };
+
+       const graphOptions = {
+  responsive: true,
+  plugins: {
+    annotation: {
+      annotations: {
+        lowerLimit: limits.lower_limit
+          ? {
+              type: "line",
+              yMin: limits.lower_limit,
+              yMax: limits.lower_limit,
+              borderColor: "blue",
+              borderWidth: 1,
+              borderDash: [5, 5],
+              label: {
+                content: "Min",
+                enabled: true,
+                position: "start",
+              },
+            }
+          : null,
+        upperLimit: limits.upper_limit
+          ? {
+              type: "line",
+              yMin: limits.upper_limit,
+              yMax: limits.upper_limit,
+              borderColor: "red",
+              borderWidth: 1,
+              borderDash: [5, 5],
+              label: {
+                content: "Max",
+                enabled: true,
+                position: "start",
+              },
+            }
+          : null,
+      },
+    },
+    legend: {
+      display: true,
+      position: "top",
+      labels: {
+        generateLabels: (chart) => {
+          const datasetLabels = chart.data.datasets.map((dataset) => ({
+            text: dataset.label,
+            fillStyle: dataset.borderColor,
+          }));
+
+          const limitLabels = [];
+          if (limits.lower_limit) {
+            limitLabels.push({
+              text: "Min Limit",
+              fillStyle: "blue",
+            });
+          }
+          if (limits.upper_limit) {
+            limitLabels.push({
+              text: "Max Limit",
+              fillStyle: "red",
+            });
+          }
+
+          return [...datasetLabels, ...limitLabels];
+        },
+      },
+    },
+  },
+};
+
+        return (
+          <div key={testName} className="test-section">
+            <h3>{testInfo?.full_name || testName}</h3>
+            <p>{testInfo?.description || "No description available."}</p>
+            <Line data={graphData} options={graphOptions} />
+            <p>
+              <strong>Most Recent Value:</strong>{" "}
+              {testData[testData.length - 1].value}
+            </p>
+          </div>
+        );
+      })}
+    </div>
   );
 };
 

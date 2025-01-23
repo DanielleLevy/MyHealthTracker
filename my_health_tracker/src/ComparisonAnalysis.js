@@ -13,6 +13,7 @@ import {
   Filler,
 } from "chart.js";
 
+// Registering Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -24,6 +25,7 @@ ChartJS.register(
   Filler
 );
 
+// Map for test names and descriptions
 const testNameMap = {
   BLDS: "Pre-meal Blood Glucose",
   BP_HIGH: "Systolic Blood Pressure",
@@ -58,51 +60,129 @@ const testDescriptionMap = {
 
 const ComparisonAnalysis = ({ userData }) => {
   const [comparisonData, setComparisonData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (userData) {
-      const { smoking, drinking, physical_activity, education_levels } = userData;
+      const { smoking, drinking, physical_activity, education_levels, age_group } = userData;
 
       if (
         smoking !== undefined &&
         drinking !== undefined &&
         physical_activity !== undefined &&
-        education_levels !== undefined
+        education_levels !== undefined &&
+        age_group !== undefined
       ) {
-        fetchComparisonData(smoking, drinking, physical_activity, education_levels);
+        fetchComparisonData(smoking, drinking, physical_activity, education_levels, age_group);
       } else {
+        setError("Incomplete user data.");
         console.error("Incomplete user data:", userData);
       }
     }
   }, [userData]);
 
-  const fetchComparisonData = async (smoking, drinking, physical_activity, education_levels) => {
+  const fetchComparisonData = async (smoking, drinking, physical_activity, education_levels, age_group) => {
     try {
+      setLoading(true);
+      setError(null);
+
       const response = await axios.get("http://localhost:5001/api/compare_tests", {
-        params: { smoking, drinking, physical_activity, education_levels },
+        params: {
+          smoking,
+          drinking,
+          physical_activity,
+          education_levels,
+          age_group,
+        },
       });
+
+      console.log("API response:", response.data);
       setComparisonData(response.data);
-    } catch (error) {
-      console.error("Error fetching comparison data:", error);
+    } catch (err) {
+      console.error("Error fetching comparison data:", err);
+      setError("Failed to fetch comparison data.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!comparisonData) {
+  if (loading) {
     return <p>Loading comparison data...</p>;
+  }
+
+  if (error) {
+    return <p style={{ color: "red" }}>Error: {error}</p>;
   }
 
   return (
     <div>
-      <h2>Test Results Comparison</h2>
       {comparisonData.map((test, index) => {
-        // בדיקה אם הנתונים הדרושים קיימים
-        if (!test.histogram || !Array.isArray(test.histogram) || test.histogram.length === 0) {
+        console.log("Rendering Test:", test);
+
+        if (!test.histogram) {
+          console.warn(`Histogram is missing for test: ${test.test_name}`);
           return (
             <div key={index}>
               <h3>{testNameMap[test.test_name] || test.test_name}</h3>
-              <p>No data available for this test.</p>
+              <p>No data available for this test (Missing histogram).</p>
             </div>
           );
+        }
+
+        if (!Array.isArray(test.histogram)) {
+          try {
+            test.histogram = JSON.parse(test.histogram);
+            console.log(`Parsed histogram for test: ${test.test_name}`, test.histogram);
+          } catch (e) {
+            console.error(`Failed to parse histogram for test: ${test.test_name}`, test.histogram);
+            return (
+              <div key={index}>
+                <h3>{testNameMap[test.test_name] || test.test_name}</h3>
+                <p>No data available for this test (Histogram not an array).</p>
+              </div>
+            );
+          }
+        }
+
+        if (test.histogram.every(val => val === 0)) {
+          console.warn(`All histogram values are zero for test: ${test.test_name}`);
+          return (
+            <div key={index}>
+              <h3>{testNameMap[test.test_name] || test.test_name}</h3>
+              <p>No data available for this test (All values are zero).</p>
+            </div>
+          );
+        }
+
+     const binSize = test.bin_size || 1;
+        const labels = test.histogram.map((_, idx) => `${(idx * 10).toFixed(1)}-${((idx + 1) * 10).toFixed(1)}`);
+
+        const maxLabels = 20;
+        const step = Math.ceil(labels.length / maxLabels);
+        const reducedLabels = labels.filter((_, idx) => idx % step === 0);
+        const reducedHistogram = test.histogram.filter((_, idx) => idx % step === 0);
+        const chartData = reducedHistogram.map((value, index) => ({
+          x: index * 10, // ערך X: אינדקס כפול גודל בין (למשל, 0, 10, 20, ...)
+          y: value,      // ערך Y: ספירת ההיסטוגרמה
+        }));
+        if (reducedLabels.length !== reducedHistogram.length) {
+          console.error(
+            `Mismatch: Reduced Labels (${reducedLabels.length}) and Reduced Histogram (${reducedHistogram.length}) lengths do not match for test: ${test.test_name}`
+          );
+          return (
+            <div key={index}>
+              <h3>{testNameMap[test.test_name] || test.test_name}</h3>
+              <p style={{ color: "red" }}>Error: Mismatch in reduced data lengths for this test.</p>
+            </div>
+          );
+        }
+
+        const userValueIndex = Math.floor(test.your_value / binSize);
+        const userValue = userValueIndex < test.histogram.length ? test.histogram[userValueIndex] : null;
+
+        if (userValue === null) {
+          console.warn(`User value (${test.your_value}) does not match any bin.`);
         }
 
         return (
@@ -111,14 +191,10 @@ const ComparisonAnalysis = ({ userData }) => {
             <p>{testDescriptionMap[test.test_name] || "No description available."}</p>
             <Line
               data={{
-                labels: Array.from(
-                  { length: test.histogram.length },
-                  (_, i) => (i + 1) * (test.bin_size || 1)
-                ),
                 datasets: [
                   {
                     label: "Population Distribution",
-                    data: test.histogram,
+                    data: chartData, // שימוש במערך הנקודות החדש
                     backgroundColor: "rgba(75, 192, 192, 0.4)",
                     borderColor: "rgba(75, 192, 192, 1)",
                     borderWidth: 1,
@@ -126,14 +202,14 @@ const ComparisonAnalysis = ({ userData }) => {
                   },
                   {
                     label: "Your Value",
-                    data: Array(test.histogram.length).fill(null).map((_, idx) =>
-                      idx === Math.floor(test.your_value / (test.bin_size || 1)) ? test.histogram[idx] : null
-                    ),
+                    data: [{ x: Math.floor(test.your_value / 10) * 10, y: 0 }], // נקודה בודדת
+                    pointStyle: 'rectRot',
                     backgroundColor: "rgba(255, 99, 132, 1)",
                     borderColor: "rgba(255, 99, 132, 1)",
                     borderWidth: 3,
-                    pointRadius: 6,
+                    pointRadius: 8,
                     pointBackgroundColor: "rgba(255, 99, 132, 1)",
+                    pointRotation: 45,
                   },
                 ],
               }}
@@ -151,17 +227,21 @@ const ComparisonAnalysis = ({ userData }) => {
                     },
                   },
                 },
-                scales: {
+                 scales: {
                   x: {
+                    type: 'linear', // חשוב: הגדרת סוג סקאלה לינארית
                     title: {
                       display: true,
-                      text: "Test Values",
+                      text: "Value Range", // שינוי הטקסט
                     },
+                    ticks: {
+                      stepSize: 10
+                    }
                   },
                   y: {
                     title: {
                       display: true,
-                      text: "Number of People",
+                      text: "Frequency",
                     },
                     beginAtZero: true,
                   },

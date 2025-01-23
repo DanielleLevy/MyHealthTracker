@@ -15,6 +15,7 @@ function MainPage() {
   const [showAddTestModal, setShowAddTestModal] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [healthAlerts, setHealthAlerts] = useState([]);
+  const [testList, setTestList] = useState([]); // שמירת רשימת הבדיקות
   const [userData, setUserData] = useState(null);
 
   const renderTabContent = () => {
@@ -36,8 +37,15 @@ function MainPage() {
         </div>
       );
     
-    case "tests":
-      return <Tests tests={userData?.tests || []} />;
+case "tests":
+    return (
+        <Tests
+            tests={userData?.tests || []}
+            testList={testList}
+            fetchTestLimits={fetchTestLimits} // מעביר את הפונקציה כ-prop
+        />
+    );
+
     case "riskPredictions":
       return <div>Risk Predictions Content</div>;
     case "lifeStyle":
@@ -51,7 +59,6 @@ function MainPage() {
   }
 };
 
-  const [testList, setTestList] = useState([]); // רשימת בדיקות
   const [formData, setFormData] = useState({
     testName: "",
     date: "",
@@ -81,7 +88,29 @@ function MainPage() {
       .catch((error) => {
         console.error("Error fetching user data:", error);
       });
-  }, [username]);
+  axios.get('http://localhost:5001/api/get_tests')
+    .then((response) => {
+      if (response.data && response.data.tests) {
+        console.log("Tests fetched:", response.data.tests);
+        setTestList(response.data.tests || []); // עדכון testList
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching test list:", error);
+    });
+}, [username]);
+const fetchTestLimits = async (testName) => {
+    try {
+        const response = await axios.get('http://localhost:5001/api/get_test_limits', {
+            params: { username, test_name: testName }
+        });
+        console.log(`Limits for ${testName}:`, response.data);
+        return response.data; // נחזיר את נתוני המינימום והמקסימום
+    } catch (error) {
+        console.error(`Error fetching limits for ${testName}:`, error);
+        return null;
+    }
+};
 
   const fetchUserTests = (username) => {
     axios.get('http://localhost:5001/api/get_user_tests', { params: { username } })
@@ -129,6 +158,7 @@ function MainPage() {
     axios.get('http://localhost:5001/api/get_tests')
       .then((response) => {
         if (response.data && response.data.tests) {
+          console.log("Tests fetched:", response.data.tests); // הדפסת המידע
           setTestList(response.data.tests || []); // עדכון רשימת הבדיקות עם שם הבדיקה המלא
         }
       })
