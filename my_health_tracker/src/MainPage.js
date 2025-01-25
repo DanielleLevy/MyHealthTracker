@@ -7,6 +7,7 @@ import ComparisonAnalysis from "./ComparisonAnalysis";
 import TestChart from "./TestChart"; 
 import PersonalInformation from "./PersonalInformation";
 import LifestyleQuestionnaire from "./LifestyleQuestionnaire";
+import RiskPredictions from "./RiskPredictions";
 
 
 function MainPage() {
@@ -46,8 +47,9 @@ case "tests":
         />
     );
 
-    case "riskPredictions":
-      return <div>Risk Predictions Content</div>;
+   case "riskPredictions":
+        return <RiskPredictions username={username} />;
+
     case "lifeStyle":
       return <LifestyleQuestionnaire username={username} />;
     case "comparisonAnalysis":
@@ -206,34 +208,39 @@ const fetchTestLimits = async (testName) => {
           <h2>My Health Tracker</h2>
         </div>
         <nav>
-          <ul>
-            <li className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}>
-              <i className="fas fa-home"></i> Health Summary
-            </li>
-            <li className={activeTab === "tests" ? "active" : ""} onClick={() => setActiveTab("tests")}>
-              <i className="fas fa-vial"></i> Tests
-            </li>
-            <li className={activeTab === "riskPredictions" ? "active" : ""} onClick={() => setActiveTab("riskPredictions")}>
-              <i className="fas fa-exclamation-triangle"></i> Risk Predictions
-            </li>
-            <li className={activeTab === "comparisonAnalysis" ? "active" : ""} onClick={() => setActiveTab("comparisonAnalysis")}>
-              <i className="fas fa-chart-bar"></i> Comparison Analysis
-            </li>
-            <li className={activeTab === "lifeStyle" ? "active" : ""} onClick={() => setActiveTab("lifeStyle")}>
-              <i className="fas fa-brain"></i> Life Style
-            </li>
-            <li className={activeTab === "PersonalInformation" ? "active" : ""} onClick={() => setActiveTab("PersonalInformation")}>
-              <i className="bi bi-info-circle"></i> Personal Information
-            </li>
-          </ul>
+            <ul>
+                <li className={activeTab === "dashboard" ? "active" : ""} onClick={() => setActiveTab("dashboard")}>
+                    <i className="fas fa-home"></i> Health Summary
+                </li>
+                <li className={activeTab === "tests" ? "active" : ""} onClick={() => setActiveTab("tests")}>
+                    <i className="fas fa-vial"></i> Tests
+                </li>
+                <li
+                    className={activeTab === "riskPredictions" ? "active" : ""}
+                    onClick={() => setActiveTab("riskPredictions")}
+                >
+                    <i className="fas fa-exclamation-triangle"></i> Risk Predictions
+                </li>
+                <li className={activeTab === "comparisonAnalysis" ? "active" : ""}
+                    onClick={() => setActiveTab("comparisonAnalysis")}>
+                    <i className="fas fa-chart-bar"></i> Comparison Analysis
+                </li>
+                <li className={activeTab === "lifeStyle" ? "active" : ""} onClick={() => setActiveTab("lifeStyle")}>
+                    <i className="fas fa-brain"></i> Life Style
+                </li>
+                <li className={activeTab === "PersonalInformation" ? "active" : ""}
+                    onClick={() => setActiveTab("PersonalInformation")}>
+                    <i className="bi bi-info-circle"></i> Personal Information
+                </li>
+            </ul>
         </nav>
 
       </aside>
 
-      <div className="content">
-        <header className="navbar">
-        <h1 className="welcome-text">Welcome, {username}!</h1>
-        <button className="reminder-btn" onClick={() => setShowReminders(!showReminders)}>
+        <div className="content">
+            <header className="navbar">
+                <h1 className="welcome-text">Welcome, {username}!</h1>
+                <button className="reminder-btn" onClick={() => setShowReminders(!showReminders)}>
             <i className="fas fa-bell"></i>
             {healthAlerts.length > 0 && (
               <span className="notification-badge">{healthAlerts.length}</span>

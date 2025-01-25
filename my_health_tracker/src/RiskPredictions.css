@@ -1,0 +1,55 @@
+.content {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.action-cards {
+  display: flex;
+  gap: 20px;
+  justify-content: space-around;
+}
+
+.card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+  width: 250px;
+}
+
+.card-icon {
+  font-size: 50px;
+  color: #ff6f61;
+  margin-bottom: 10px;
+}
+
+.btn {
+  background-color: #ff6f61;
+  border: none;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #e65a4f;
+}
+
+.prediction-result {
+  margin-top: 15px;
+}
+
+.result-box {
+  background: #fff4f0;
+  border: 1px solid #ff6f61;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+.result-box h4 {
+  margin: 0 0 10px;
+  color: #ff6f61;
+}
