@@ -29,26 +29,10 @@ ChartJS.register(
   annotationPlugin
 );
 
-const Tests = ({ tests, testList, fetchTestLimits }) => {
+const Tests = ({ tests, testList, limitsMap}) => {
   console.log("Received tests:", tests);
   console.log("Received testList:", testList);
 
-  const [limitsMap, setLimitsMap] = useState({}); // לשמירת המגבלות
-
-  useEffect(() => {
-    // Fetch limits for all unique tests
-    const fetchAllLimits = async () => {
-      const newLimitsMap = {};
-      const uniqueTestNames = [...new Set(tests.map((test) => test.test_name))];
-      for (const testName of uniqueTestNames) {
-        const limits = await fetchTestLimits(testName);
-        newLimitsMap[testName] = limits;
-      }
-      setLimitsMap(newLimitsMap);
-    };
-
-    fetchAllLimits();
-  }, [tests, fetchTestLimits]);
 
   const exportDataAsPDF = () => {
     const doc = new jsPDF();

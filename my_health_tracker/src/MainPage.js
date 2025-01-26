@@ -16,7 +16,8 @@ function MainPage() {
   const [showAddTestModal, setShowAddTestModal] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [healthAlerts, setHealthAlerts] = useState([]);
-  const [testList, setTestList] = useState([]); // שמירת רשימת הבדיקות
+  const [testList, setTestList] = useState([]); 
+  const [limitsMap, setLimitsMap] = useState({}); 
   const [userData, setUserData] = useState(null);
 
   const renderTabContent = () => {
@@ -43,7 +44,7 @@ case "tests":
         <Tests
             tests={userData?.tests || []}
             testList={testList}
-            fetchTestLimits={fetchTestLimits} // מעביר את הפונקציה כ-prop
+            limitsMap={limitsMap}
         />
     );
 
@@ -85,6 +86,7 @@ case "tests":
           fetchUserTests(username);
           fetchHealthAlerts(username); 
           fetchHealthSummary(username);
+          fetchAllLimits(username);
         }
       })
       .catch((error) => {
@@ -101,17 +103,24 @@ case "tests":
       console.error("Error fetching test list:", error);
     });
 }, [username]);
-const fetchTestLimits = async (testName) => {
-    try {
-        const response = await axios.get('http://localhost:5001/api/get_test_limits', {
-            params: { username, test_name: testName }
-        });
-        console.log(`Limits for ${testName}:`, response.data);
-        return response.data; // נחזיר את נתוני המינימום והמקסימום
-    } catch (error) {
-        console.error(`Error fetching limits for ${testName}:`, error);
-        return null;
-    }
+const fetchAllLimits = async () => {
+  if (!username) return;
+
+  try {
+      const response = await axios.get("http://localhost:5001/api/get_all_test_limits", {
+          params: { username }
+      });
+
+      if (response.data.test_limits) {
+          const newLimitsMap = {};
+          response.data.test_limits.forEach(({ test_name, lower_limit, upper_limit }) => {
+              newLimitsMap[test_name] = { lower_limit, upper_limit };
+          });
+          setLimitsMap(newLimitsMap);
+      }
+  } catch (error) {
+      console.error("Error fetching test limits:", error);
+  }
 };
 
   const fetchUserTests = (username) => {

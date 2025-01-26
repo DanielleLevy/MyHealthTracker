@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
 import pymysql
-from flask_cors import CORS  # ייבוא CORS
+from flask_cors import CORS  
 from datetime import datetime, date
 import joblib
 app = Flask(__name__)
-CORS(app)  # אפשרי CORS לכל היישום
+CORS(app) 
 @app.route('/api/user_data', methods=['GET'])
 def get_user_data():
     username = request.args.get('username')  # לדוגמה, המשתמש המחובר
@@ -12,10 +12,10 @@ def get_user_data():
     if not username:
         return jsonify({'error': 'Username is required'}), 400
 
-    connection = get_db_connection()  # יצירת חיבור למסד הנתונים
+    # Connection to the database
+    connection = get_db_connection()  
     try:
         with connection.cursor() as cursor:
-            # עדכון השאילתה לכלול את education_levels
             cursor.execute("""
                 SELECT u.username, u.age, u.gender, u.weight, u.height,u.age_group, 
                        l.smoking, l.drinking, l.physical_activity, l.education_levels
@@ -23,13 +23,13 @@ def get_user_data():
                 LEFT JOIN Life_style l ON u.username = l.user_username
                 WHERE u.username = %s
             """, (username,))
-            user_data = cursor.fetchone()  # הבאת רשומה אחת בלבד
+            user_data = cursor.fetchone() 
 
-        # בדיקה אם המשתמש קיים
+        # check if the user exists
         if not user_data:
             return jsonify({'error': 'User not found'}), 404
 
-        # חישוב BMI (אם גובה ומשקל קיימים)
+        # calculate BMI
         if user_data['height'] and user_data['weight']:
             height_in_meters = user_data['height'] / 100
             user_data['BMI'] = round(user_data['weight'] / (height_in_meters ** 2), 2)
@@ -42,7 +42,6 @@ def get_user_data():
         return jsonify({'error': str(e)}), 500
     finally:
         connection.close()
- # סגירת החיבור
 
 
 # פונקציה להתחברות למסד הנתונים
@@ -50,7 +49,7 @@ def get_db_connection():
     return pymysql.connect(
         host="localhost",
         user="root",
-        password="DANI",
+        password="Shiran0606!",
         database="myhealthtracker",
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -68,7 +67,7 @@ def add_test():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # הוספת רשומה חדשה לטבלת User_Tests
+            # Insert the test data into the database
             cursor.execute(
                 "INSERT INTO User_Tests (username, test_name, test_date, value) VALUES (%s, %s, %s, %s)",
                 (username, test_name, test_date, value)
@@ -83,17 +82,17 @@ def add_test():
 
 @app.route('/api/get_user_tests', methods=['GET'])
 def get_user_tests():
-    username = request.args.get('username')  # קבלת שם המשתמש מהבקשה
+    username = request.args.get('username')  
     if not username:
-        return jsonify({"error": "Username not provided"}), 400  # אם שם המשתמש לא סופק, החזרת שגיאה
-
-    connection = get_db_connection()  # יצירת חיבור למסד הנתונים
+        # If the username is not provided, return an error
+        return jsonify({"error": "Username not provided"}), 400  
+    connection = get_db_connection()  
     try:
         with connection.cursor() as cursor:
-            # שאילתא לשליפת הבדיקות של המשתמש
+
             query = "SELECT * FROM User_Tests WHERE username = %s ORDER BY test_date DESC"
             cursor.execute(query, (username,))
-            tests = cursor.fetchall()  # שליפת כל הרשומות
+            tests = cursor.fetchall() 
 
         return jsonify({"tests": tests}), 200  # החזרת הבדיקות בפורמט JSON
     except Exception as e:
@@ -107,13 +106,12 @@ def predict_diabetes():
     if not username:
         return jsonify({"error": "Username is required"}), 400
 
-    # מיפוי קבוצות גיל
+    # Age group mapping 
     age_group_mapping = {
         1: (18, 24), 2: (25, 29), 3: (30, 34), 4: (35, 39),
         5: (40, 44), 6: (45, 49), 7: (50, 54), 8: (55, 59),
         9: (60, 64), 10: (65, 69), 11: (70, 74), 12: (75, 79),
-        13: (80, 100)
-    }
+        13: (80, 100)}
 
     # שלב 1: שליפת נתוני המשתמש ממסד הנתונים
     connection = get_db_connection()
@@ -543,7 +541,7 @@ JOIN
     Life_style ls ON u.username = ls.user_username
 JOIN 
     Tests_Values tv ON ut.test_name = tv.test_name
-JOIN (SELECT username FROM Users ORDER BY RAND() LIMIT 1000) AS random_users ON u.username = random_users.username -- שימוש ב-JOIN
+JOIN (SELECT username FROM Users ORDER BY RAND() LIMIT 1000) AS random_users ON u.username = random_users.username 
 WHERE 
     ls.smoking = %s
     AND ls.drinking = %s
@@ -558,12 +556,10 @@ GROUP BY
         with connection.cursor() as cursor:
             cursor.execute(query, (smoking, drinking, physical_activity, education_levels, age_group))
             results = cursor.fetchall()
-
-        # בדיקת היסטוגרמות ריקות
         for result in results:
             if not result['histogram']:
                 print(f"Warning: Histogram for test {result['test_name']} is empty.")
-        print("Results from database:", results)  # הדפסה חשובה!
+        print("Results from database:", results)  
 
         return jsonify(results), 200
     except Exception as e:
@@ -576,18 +572,15 @@ GROUP BY
 def comparison_analysis():
     connection = get_db_connection()
 
-    # קבלת פרמטרים מהבקשה
     smoking = request.args.get('smoking')
     drinking = request.args.get('drinking')
     physical_activity = request.args.get('physical_activity')
     education_levels = request.args.get('education_levels')
     age_group = request.args.get('age_group')
 
-    # בדיקה שכל הפרמטרים הדרושים קיימים
     if not all([smoking, drinking, physical_activity, education_levels, age_group]):
         return jsonify({"error": "Missing required parameters"}), 400
 
-    # שאילתת SQL לחישוב הערכים הממוצעים ותוצאות השוואתיות
     query = """
     SELECT 
         ut.test_name,
@@ -621,10 +614,10 @@ def comparison_analysis():
         with connection.cursor() as cursor:
             cursor.execute(query, (smoking, drinking, physical_activity, education_levels, age_group))
             results = cursor.fetchall()
-            print("Query Results:", results)  # דיבוג: הדפסת התוצאות
+            print("Query Results:", results)  
         return jsonify(results), 200
     except Exception as e:
-        print("Error executing query:", e)  # הדפסת שגיאה
+        print("Error executing query:", e) 
         return jsonify({"error": str(e)}), 500
     finally:
         connection.close()
@@ -634,27 +627,26 @@ def get_tests():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # שאילתא לשליפת שם ותיאור של הבדיקות
             cursor.execute("SELECT test_name, full_name, description FROM Tests")
             tests = cursor.fetchall()
-            print("API output:", tests)  # הדפסת המידע בקונסול לבדיקה
+            print("API output:", tests) 
         return jsonify({'tests': tests}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
         connection.close()
 @app.route('/api/get_test_limits', methods=['GET'])
-def get_test_limits():
+@app.route('/api/get_all_test_limits', methods=['GET'])
+def get_all_test_limits():
     username = request.args.get('username')
-    test_name = request.args.get('test_name')
 
-    if not username or not test_name:
-        return jsonify({"error": "Username and test_name are required"}), 400
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
 
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # שליפת קבוצת הגיל של המשתמש
+            # Get user's age group
             cursor.execute("SELECT age_group FROM Users WHERE username = %s", (username,))
             user = cursor.fetchone()
 
@@ -663,24 +655,23 @@ def get_test_limits():
 
             age_group = user['age_group']
 
-            # שליפת המינימום והמקסימום עבור הבדיקה וקבוצת הגיל
+            # Fetch limits for all tests in the user's age group
             cursor.execute("""
-                SELECT lower_limit, upper_limit 
+                SELECT test_name, lower_limit, upper_limit 
                 FROM Tests_Values 
-                WHERE test_name = %s AND age_group = %s
-            """, (test_name, age_group))
-            limits = cursor.fetchone()
+                WHERE age_group = %s
+            """, (age_group,))
+            test_limits = cursor.fetchall()
 
-            if not limits:
-                return jsonify({"error": "Limits not found for the given test and age group"}), 404
+            if not test_limits:
+                return jsonify({"error": "No limits found for the given age group"}), 404
 
-            return jsonify({"lower_limit": limits['lower_limit'], "upper_limit": limits['upper_limit']}), 200
+            return jsonify({"test_limits": test_limits}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
         connection.close()
 
-# פונקציה לטיפול בהתחברות
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json

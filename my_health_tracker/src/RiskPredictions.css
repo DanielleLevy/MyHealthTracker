@@ -1,55 +1,72 @@
-.content {
+.risk-container {
   padding: 20px;
-  font-family: Arial, sans-serif;
-}
-
-.action-cards {
-  display: flex;
-  gap: 20px;
-  justify-content: space-around;
-}
-
-.card {
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  background: var(--light-bg);
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   text-align: center;
-  width: 250px;
 }
 
-.card-icon {
-  font-size: 50px;
-  color: #ff6f61;
-  margin-bottom: 10px;
+.risk-results {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.btn {
-  background-color: #ff6f61;
-  border: none;
+.risk-item {
+  background: var(--secondary-color);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.risk-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.risk-icon {
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.gauge-chart-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 30px 0;
+}
+
+.gauge-chart-container svg {
+  width: 400px !important;
+  height: 200px !important;
+}
+
+.no-data-message {
+  background: #f9e2de;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--primary-color);
   color: white;
-  padding: 10px 15px;
+  padding: 10px;
+  border: none;
   border-radius: 5px;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
-.btn:hover {
-  background-color: #e65a4f;
-}
-
-.prediction-result {
-  margin-top: 15px;
-}
-
-.result-box {
-  background: #fff4f0;
-  border: 1px solid #ff6f61;
-  border-radius: 8px;
-  padding: 10px;
-  margin-top: 10px;
-}
-
-.result-box h4 {
-  margin: 0 0 10px;
-  color: #ff6f61;
+.btn-primary:hover {
+  background: #6a0000;
 }
