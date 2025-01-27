@@ -296,7 +296,7 @@ const fetchAllLimits = async () => {
                   >
                     <option value="">Select Test</option>
                     {testList.map((test, index) => (
-                      <option key={index} value={test}>
+                      <option key={index} value={test.test_name}>
                          {test.full_name}
                       </option>
                     ))}
