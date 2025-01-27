@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faBrain, faSyringe, faSmile } from "@fortawesome/free-solid-svg-icons";
 import GaugeChart from "react-gauge-chart";
 
-function RiskPredictions({ username, setActiveTab}) {
+function RiskPredictions({ username, setActiveTab }) {
   const [riskModels] = useState([
     {
       name: "Heart Disease",
@@ -67,12 +67,20 @@ function RiskPredictions({ username, setActiveTab}) {
     axios
       .get(`http://localhost:5001${model.endpoint}`, { params: { username } })
       .then((response) => {
-        if (response.data) {
+        if (response.data.missing_tests) {
+          setResults((prev) => ({
+            ...prev,
+            [model.name]: {
+              error: `Missing the following tests: ${response.data.missing_tests.join(", ")}`,
+            },
+          }));
+          console.log("Updated results with missing tests:", results);
+        } else if (response.data) {
           const { probability } = response.data;
           let riskLevel = "Low";
           let advice = model.lowAdvice;
           let color = "#00ff00";
-          
+
           if (probability >= 50 && probability < 80) {
             riskLevel = "Medium";
             advice = model.mediumAdvice;
@@ -97,11 +105,15 @@ function RiskPredictions({ username, setActiveTab}) {
   return (
     <div className="risk-container">
       <h2>Health Risk Predictions</h2>
-      <p className="disclaimer">These predictions are based on machine learning models and should be used for informational purposes only. Consult a healthcare professional for personalized advice.</p>
+      <p className="disclaimer">
+        These predictions are based on machine learning models and should be used for informational purposes only. Consult a healthcare professional for personalized advice.
+      </p>
       {!lifestyleData ? (
         <div className="no-data-message">
           <p>You need to complete the lifestyle questionnaire before getting predictions.</p>
-          <button className="btn btn-primary" onClick={() => setActiveTab("lifeStyle")}>Fill Questionnaire</button>
+          <button className="btn btn-primary" onClick={() => setActiveTab("lifeStyle")}>
+            Fill Questionnaire
+          </button>
         </div>
       ) : (
         <div className="risk-results">
@@ -115,7 +127,13 @@ function RiskPredictions({ username, setActiveTab}) {
               <button className="btn btn-primary" onClick={() => handlePrediction(model)}>
                 Predict
               </button>
-              {results[model.name] && (
+              {results[model.name] && results[model.name].error ? (
+                <div className="error-message" style={{ color: "#ff0000" }}>
+                  <p>
+                    <strong>Error:</strong> {results[model.name].error}
+                  </p>
+                </div>
+              ) : results[model.name] && (
                 <div className="gauge-chart-container">
                   <GaugeChart
                     id={`gauge-${index}`}
@@ -129,8 +147,12 @@ function RiskPredictions({ username, setActiveTab}) {
                   <p style={{ color: results[model.name].color, fontWeight: "bold" }}>
                     You are at {results[model.name].riskLevel} risk for {model.name.toLowerCase()}.
                   </p>
-                  <p><strong>Advice:</strong> {results[model.name].advice}</p>
-                  <a href={model.link} target="_blank" rel="noopener noreferrer">Learn more</a>
+                  <p>
+                    <strong>Advice:</strong> {results[model.name].advice}
+                  </p>
+                  <a href={model.link} target="_blank" rel="noopener noreferrer">
+                    Learn more
+                  </a>
                 </div>
               )}
             </div>
