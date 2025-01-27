@@ -66,6 +66,16 @@
   cursor: pointer;
   transition: background 0.2s;
 }
+.error-message {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid red;
+  border-radius: 5px;
+  background-color: #ffe5e5;
+  color: #d8000c;
+  font-weight: bold;
+}
+
 
 .btn-primary:hover {
   background: #6a0000;
