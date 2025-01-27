@@ -199,7 +199,7 @@ const fetchAllLimits = async () => {
       value: formData.value,
     })
       .then(() => {
-        alert("Test added successfully!");
+      alert("Test added successfully!\nTo see the most recent results, please refresh the page.");
         handleCloseAddTestModal();
         fetchUserTests(username); // Refresh user tests after adding a new one
       })

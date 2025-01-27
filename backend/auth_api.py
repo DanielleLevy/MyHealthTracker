@@ -150,9 +150,14 @@ def predict_diabetes():
             test_values = {row['test_name']: float(row['value']) for row in test_data}
 
             # בדיקה שכל הנתונים קיימים
-            if 'BP_HIGH' not in test_values or 'BP_LWST' not in test_values or 'TOT_CHOLE' not in test_values:
-                return jsonify({"error": "Missing test data for blood pressure or cholesterol"}), 400
+            required_tests = ['BP_HIGH', 'BP_LWST', 'TOT_CHOLE']
+            missing_tests = [test for test in required_tests if test not in test_values]
 
+            if missing_tests:
+                return jsonify({
+                    "error": "Missing test data",
+                    "missing_tests": missing_tests
+                }), 200
         # שלב 3: חישוב והתאמות נתונים
         # 3.1: חישוב BMI
         if user_data['height'] and user_data['weight']:
@@ -228,125 +233,80 @@ def predict_diabetes():
 
 @app.route('/api/predict_stroke', methods=['GET'])
 def predict_stroke():
-    import logging
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(__name__)
-
     username = request.args.get('username')
 
-    logger.debug("Received request for username: %s", username)
-
     if not username:
-        logger.error("Username is missing in the request")
         return jsonify({"error": "Username is required"}), 400
 
-    # שלב 1: שליפת נתוני המשתמש ממסד הנתונים
     connection = get_db_connection()
     try:
-        logger.debug("Establishing database connection")
         with connection.cursor() as cursor:
-            logger.debug("Querying user and lifestyle data")
+            # Fetch user data
             cursor.execute("""
                 SELECT 
                     Users.gender,
                     Users.age,
                     Users.height,
                     Users.weight,
-                    Life_style.smoking,
-                    User_Tests.value AS avg_glucose_level,
-                    User_Tests.test_name
+                    Life_style.smoking
                 FROM Users
                 LEFT JOIN Life_style ON Users.username = Life_style.user_username
-                LEFT JOIN User_Tests ON Users.username = User_Tests.username
-                WHERE Users.username = %s AND User_Tests.test_name = 'BLDS'
+                WHERE Users.username = %s
             """, (username,))
             user_data = cursor.fetchone()
 
-            logger.debug("User data fetched: %s", user_data)
-
             if not user_data:
-                logger.error("No user found for username: %s", username)
                 return jsonify({"error": "User not found"}), 404
 
-            logger.debug("Querying blood pressure data")
+            # Fetch required tests
             cursor.execute("""
                 SELECT 
                     test_name, value
                 FROM User_Tests
-                WHERE username = %s AND test_name IN ('BP_HIGH', 'BP_LWST')
+                WHERE username = %s AND test_name IN ('BP_HIGH', 'BP_LWST', 'BLDS')
             """, (username,))
-            bp_data = cursor.fetchall()
+            test_data = cursor.fetchall()
 
-            logger.debug("Blood pressure data fetched: %s", bp_data)
+            test_values = {row['test_name']: float(row['value']) for row in test_data}
+            required_tests = ['BP_HIGH', 'BP_LWST', 'BLDS']
+            missing_tests = [test for test in required_tests if test not in test_values]
 
-            bp_values = {row['test_name']: float(row['value']) for row in bp_data}
+            if missing_tests:
+                return jsonify({
+                    "error": "Missing test data",
+                    "missing_tests": missing_tests
+                }), 200
 
-            if 'BP_HIGH' not in bp_values or 'BP_LWST' not in bp_values:
-                logger.error("Missing blood pressure data for username: %s", username)
-                return jsonify({"error": "Missing blood pressure data"}), 400
-
-        # שלב 3: חישוב והתאמות נתונים
-        logger.debug("Processing user data for feature preparation")
-        gender_mapping = {"Male": 1, "Female": 2, "Other": 3}
-        gender = gender_mapping.get(user_data['gender'], 3)
-
-        if user_data['height'] and user_data['weight']:
-            height_in_meters = user_data['height'] / 100
-            BMI = round(user_data['weight'] / (height_in_meters ** 2), 2)
-        else:
-            logger.error("Missing height or weight for BMI calculation")
-            return jsonify({"error": "Missing height or weight for BMI calculation"}), 400
-
-        hypertension = 1 if (bp_values['BP_HIGH'] > 140 or bp_values['BP_LWST'] > 90) else 0
-
-        smoking_status_mapping = {1: 1, 2: 2, 3: 3, 0: 0}
-        smoking_status = smoking_status_mapping.get(user_data['smoking'], 0)
-
-        ever_married_mapping = {"Yes": 2, "No": 1}
-        ever_married = ever_married_mapping.get(user_data.get('ever_married', "No"), 1)
-
-        avg_glucose_level = user_data.get('avg_glucose_level', 0)
+        # Calculate features
+        height_in_meters = user_data['height'] / 100
+        BMI = round(user_data['weight'] / (height_in_meters ** 2), 2)
+        hypertension = 1 if (test_values['BP_HIGH'] > 140 or test_values['BP_LWST'] > 90) else 0
 
         features = [
-            gender,
+            user_data['gender'],
             user_data['age'],
             hypertension,
-            ever_married,
-            avg_glucose_level,
+            test_values['BLDS'],
             BMI,
-            smoking_status
+            user_data['smoking']
         ]
 
-        logger.debug("Prepared features: %s", features)
-
-        # שלב 5: טעינת המודל
+        # Load and use model
         model_path = '../models/best_stroke_model_Gradient Boosting.pkl'
-        logger.debug("Loading model from path: %s", model_path)
         stroke_model = joblib.load(model_path)
-
-        # שלב 6: חיזוי
-        logger.debug("Making prediction")
         prediction = stroke_model.predict([features])[0]
         probability = stroke_model.predict_proba([features])[0][int(prediction)]
 
-        risk_mapping = {
-            0: "Low Risk of Stroke",
-            1: "High Risk of Stroke"
-        }
-        result = {
+        risk_mapping = {0: "Low Risk of Stroke", 1: "High Risk of Stroke"}
+        return jsonify({
             "risk_level": risk_mapping.get(prediction, "Unknown"),
             "probability": round(probability * 100, 2)
-        }
-
-        logger.debug("Prediction result: %s", result)
-        return jsonify(result), 200
+        }), 200
 
     except Exception as e:
-        logger.exception("An error occurred while processing the request")
         return jsonify({"error": str(e)}), 500
 
     finally:
-        logger.debug("Closing database connection")
         connection.close()
 
 
@@ -357,10 +317,10 @@ def predict_depression():
     if not username:
         return jsonify({"error": "Username is required"}), 400
 
-    # Fetch user data
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
+            # Fetch user data
             cursor.execute("""
                 SELECT 
                     age,
@@ -382,36 +342,30 @@ def predict_depression():
             if not user_data:
                 return jsonify({"error": "User not found"}), 404
 
-        # Prepare the input features
         features = [
             user_data['age'],
             user_data['marital_status'],
             user_data['education_levels'],
             user_data['children'],
-            1 if user_data['smoking'] in [2, 3] else 0,  # Binary mapping for smoking
-            1 if user_data['physical_activity'] in [2, 3] else 0,  # Binary mapping for physical activity
+            1 if user_data['smoking'] in [2, 3] else 0,
+            1 if user_data['physical_activity'] in [2, 3] else 0,
             user_data['work'],
-            1 if user_data['drinking'] == 1 else 0,  # Binary mapping for drinking
+            1 if user_data['drinking'] == 1 else 0,
             user_data['dietary_habit'],
-            user_data['sleep_pattern'],
+            user_data['sleep_pattern']
         ]
 
-        # Load the model
-        model_path = '../models/best_logistic_regression_model_depression.pkl'  # Update with your model path
+        # Load and use model
+        model_path = '../models/best_logistic_regression_model_depression.pkl'
         depression_model = joblib.load(model_path)
-
-        # Make prediction
         prediction = depression_model.predict([features])[0]
         probability = depression_model.predict_proba([features])[0][int(prediction)]
 
-        # Map results to readable format
         risk_mapping = {0: "Low Risk", 1: "High Risk"}
-        result = {
+        return jsonify({
             "risk_level": risk_mapping.get(prediction, "Unknown"),
             "probability": round(probability * 100, 2)
-        }
-
-        return jsonify(result), 200
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -427,11 +381,10 @@ def predict_heart_disease():
     if not username:
         return jsonify({"error": "Username is required"}), 400
 
-    # שלב 1: שליפת נתוני המשתמש ממסד הנתונים
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # שליפת נתוני Life_style ונתוני משתמש כלליים
+            # Fetch user and test data
             cursor.execute("""
                 SELECT 
                     Users.age,
@@ -439,8 +392,6 @@ def predict_heart_disease():
                     Users.height,
                     Users.weight,
                     Life_style.smoking,
-                    Life_style.physical_activity,
-                    Life_style.drinking,
                     User_Tests.test_name,
                     User_Tests.value
                 FROM Users
@@ -450,73 +401,38 @@ def predict_heart_disease():
             """, (username,))
             user_data = cursor.fetchall()
 
-            if not user_data:
-                return jsonify({"error": "User not found"}), 404
 
-            # עיבוד נתוני הבדיקות לשליפה מהירה לפי שם
+
             test_values = {row['test_name']: float(row['value']) for row in user_data}
-
-            # בדיקה שכל הנתונים הנדרשים קיימים
             required_tests = ['BP_HIGH', 'BP_LWST', 'TOT_CHOLE', 'BLDS']
-            if not all(test in test_values for test in required_tests):
-                return jsonify({"error": "Missing required test data"}), 400
+            missing_tests = [test for test in required_tests if test not in test_values]
 
-        # שלב 2: חישוב והתאמות נתונים
-        # 2.1: חישוב גיל (אם יש)
-        age = user_data[0]['age']
-
-        # 2.2: מיפוי מגדר
-        # Updated gender mapping for your data
-        gender_mapping = {1: 1, 2: 0}  # 1 = Male, 0 = Female
-        gender = gender_mapping.get(user_data[0]['gender'], 0)
-
-        # 2.3: חישוב לחץ דם במנוחה
-        resting_blood_pressure = test_values['BP_HIGH']  # ניתן להשתמש ב-BP_HIGH בלבד
-
-        # 2.4: כולסטרול בדם
-        cholesterol = test_values['TOT_CHOLE']
-
-        # 2.5: סוכר בצום
-        fasting_blood_sugar = 1 if test_values['BLDS'] > 120 else 0
-
-        # 2.6: מיפוי עישון ל-0/1
-        smoking_mapping = {1: 0, 2: 1, 3: 1}
-        smoking = smoking_mapping.get(user_data[0]['smoking'], 0)
-
-        # 2.7: מיפוי פעילות גופנית
-        physical_activity = user_data[0]['physical_activity']
-
-        # שלב 3: הכנת הפיצ'רים למודל
+            if missing_tests:
+                return jsonify({
+                    "error": "Missing test data",
+                    "missing_tests": missing_tests
+                }), 200
+        if not user_data:
+            return jsonify({"error": "User not found"}), 404
         features = [
-            age,                # גיל
-            gender,             # מגדר
-            resting_blood_pressure,  # לחץ דם במנוחה
-            cholesterol,        # כולסטרול
-            fasting_blood_sugar # סוכר בצום
+            user_data[0]['age'],
+            user_data[0]['gender'],
+            test_values['BP_HIGH'],
+            test_values['TOT_CHOLE'],
+            1 if test_values['BLDS'] > 120 else 0
         ]
 
-        # שלב 4: טעינת המודל
-        import joblib
+        # Load and use model
         model_path = '../models/best_heart_disease_model.pkl'
         heart_disease_model = joblib.load(model_path)
-        print(f"User data fetched: {user_data}")
-        print(f"Prepared features: {features}")
-
-        # שלב 5: חיזוי
         prediction = heart_disease_model.predict([features])[0]
         probability = heart_disease_model.predict_proba([features])[0][int(prediction)]
 
-        # שלב 6: תרגום התוצאה לתגובה למשתמש
-        risk_mapping = {
-            0: "Low Risk of Heart Disease",
-            1: "High Risk of Heart Disease"
-        }
-        result = {
+        risk_mapping = {0: "Low Risk of Heart Disease", 1: "High Risk of Heart Disease"}
+        return jsonify({
             "risk_level": risk_mapping.get(prediction, "Unknown"),
-            "probability": round(probability * 100, 2)  # סיכוי באחוזים
-        }
-
-        return jsonify(result), 200
+            "probability": round(probability * 100, 2)
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
