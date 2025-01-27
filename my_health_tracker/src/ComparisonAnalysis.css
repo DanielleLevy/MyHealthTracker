@@ -21,3 +21,7 @@
 .comparison-card p {
   margin: 5px 0;
 }
+
+.custom-spinner {
+  color: #8a3b3f; /* Maroon */
+}

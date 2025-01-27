@@ -70,3 +70,11 @@
 .btn-primary:hover {
   background: #6a0000;
 }
+.btn-primary:active {
+  background: #4e0101 !important; /* צבע מרון כהה */
+  color: white !important;
+  border: none !important;
+}
+
+
+

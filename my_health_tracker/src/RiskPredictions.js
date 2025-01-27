@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart, faBrain, faSyringe, faSmile } from "@fortawesome/free-solid-svg-icons";
 import GaugeChart from "react-gauge-chart";
 
-function RiskPredictions({ username }) {
+function RiskPredictions({ username, setActiveTab}) {
   const [riskModels] = useState([
     {
       name: "Heart Disease",
@@ -101,7 +101,7 @@ function RiskPredictions({ username }) {
       {!lifestyleData ? (
         <div className="no-data-message">
           <p>You need to complete the lifestyle questionnaire before getting predictions.</p>
-          <button className="btn btn-primary" onClick={() => <LifestyleQuestionnaire />}>Fill Questionnaire</button>
+          <button className="btn btn-primary" onClick={() => setActiveTab("lifeStyle")}>Fill Questionnaire</button>
         </div>
       ) : (
         <div className="risk-results">

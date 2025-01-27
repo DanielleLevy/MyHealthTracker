@@ -49,12 +49,12 @@ case "tests":
     );
 
    case "riskPredictions":
-        return <RiskPredictions username={username} />;
+        return <RiskPredictions username={username} setActiveTab={setActiveTab} />;
 
     case "lifeStyle":
       return <LifestyleQuestionnaire username={username} />;
     case "comparisonAnalysis":
-      return <ComparisonAnalysis userData={userData} />;
+      return <ComparisonAnalysis userData={userData} limitsMap={limitsMap} setActiveTab={setActiveTab} />;
     case "PersonalInformation":
       return <PersonalInformation userData={userData} setUserData={setUserData} />;      
     default:
