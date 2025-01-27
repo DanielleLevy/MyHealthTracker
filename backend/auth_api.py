@@ -49,7 +49,7 @@ def get_db_connection():
     return pymysql.connect(
         host="localhost",
         user="root",
-        password="Shiran0606!",
+        password="DANI",
         database="myhealthtracker",
         cursorclass=pymysql.cursors.DictCursor
     )
