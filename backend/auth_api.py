@@ -49,7 +49,7 @@ def get_db_connection():
     return pymysql.connect(
         host="localhost",
         user="root",
-        password="Shiran0606!",
+        password="DANI",
         database="myhealthtracker",
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -224,18 +224,28 @@ def predict_diabetes():
 
     finally:
         connection.close()
+
+
 @app.route('/api/predict_stroke', methods=['GET'])
 def predict_stroke():
+    import logging
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+
     username = request.args.get('username')
 
+    logger.debug("Received request for username: %s", username)
+
     if not username:
+        logger.error("Username is missing in the request")
         return jsonify({"error": "Username is required"}), 400
 
     # שלב 1: שליפת נתוני המשתמש ממסד הנתונים
     connection = get_db_connection()
     try:
+        logger.debug("Establishing database connection")
         with connection.cursor() as cursor:
-            # שליפת נתוני Life_style ונתוני משתמש כלליים
+            logger.debug("Querying user and lifestyle data")
             cursor.execute("""
                 SELECT 
                     Users.gender,
@@ -252,10 +262,13 @@ def predict_stroke():
             """, (username,))
             user_data = cursor.fetchone()
 
+            logger.debug("User data fetched: %s", user_data)
+
             if not user_data:
+                logger.error("No user found for username: %s", username)
                 return jsonify({"error": "User not found"}), 404
 
-            # שלב 2: שליפת בדיקות לחץ דם מ-User_Tests
+            logger.debug("Querying blood pressure data")
             cursor.execute("""
                 SELECT 
                     test_name, value
@@ -264,78 +277,78 @@ def predict_stroke():
             """, (username,))
             bp_data = cursor.fetchall()
 
-            # עיבוד בדיקות לשליפה מהירה לפי שם
+            logger.debug("Blood pressure data fetched: %s", bp_data)
+
             bp_values = {row['test_name']: float(row['value']) for row in bp_data}
 
-            # בדיקה שכל הנתונים קיימים
             if 'BP_HIGH' not in bp_values or 'BP_LWST' not in bp_values:
+                logger.error("Missing blood pressure data for username: %s", username)
                 return jsonify({"error": "Missing blood pressure data"}), 400
 
         # שלב 3: חישוב והתאמות נתונים
-        # 3.1: מיפוי מגדר
+        logger.debug("Processing user data for feature preparation")
         gender_mapping = {"Male": 1, "Female": 2, "Other": 3}
-        gender = gender_mapping.get(user_data['gender'], 3)  # ערך ברירת מחדל: 3 (Other)
+        gender = gender_mapping.get(user_data['gender'], 3)
 
-        # 3.2: חישוב BMI
         if user_data['height'] and user_data['weight']:
             height_in_meters = user_data['height'] / 100
             BMI = round(user_data['weight'] / (height_in_meters ** 2), 2)
         else:
+            logger.error("Missing height or weight for BMI calculation")
             return jsonify({"error": "Missing height or weight for BMI calculation"}), 400
 
-        # 3.3: חישוב יתר לחץ דם
         hypertension = 1 if (bp_values['BP_HIGH'] > 140 or bp_values['BP_LWST'] > 90) else 0
 
-        # 3.4: מיפוי עישון ל-0/1
         smoking_status_mapping = {1: 1, 2: 2, 3: 3, 0: 0}
         smoking_status = smoking_status_mapping.get(user_data['smoking'], 0)
 
-        # 3.5: מיפוי סטטוס נישואין
         ever_married_mapping = {"Yes": 2, "No": 1}
         ever_married = ever_married_mapping.get(user_data.get('ever_married', "No"), 1)
 
-        # 3.6: רמת גלוקוז ממוצעת
         avg_glucose_level = user_data.get('avg_glucose_level', 0)
 
-        # שלב 4: הכנת הפיצ'רים למודל
         features = [
-            gender,             # מגדר
-            user_data['age'],   # גיל
-            hypertension,       # יתר לחץ דם
-            ever_married,       # סטטוס נישואין
-            avg_glucose_level,  # רמת גלוקוז ממוצעת
-            BMI,                # BMI
-            smoking_status      # עישון
+            gender,
+            user_data['age'],
+            hypertension,
+            ever_married,
+            avg_glucose_level,
+            BMI,
+            smoking_status
         ]
 
+        logger.debug("Prepared features: %s", features)
+
         # שלב 5: טעינת המודל
-        import joblib
-        model_path = '../models/best_stroke_model_Logistic Regression.pkl'
+        model_path = '../models/best_stroke_model_Gradient Boosting.pkl'
+        logger.debug("Loading model from path: %s", model_path)
         stroke_model = joblib.load(model_path)
-        print(f"User data fetched: {user_data}")
-        print(f"Prepared features: {features}")
 
         # שלב 6: חיזוי
+        logger.debug("Making prediction")
         prediction = stroke_model.predict([features])[0]
         probability = stroke_model.predict_proba([features])[0][int(prediction)]
 
-        # שלב 7: תרגום התוצאה לתגובה למשתמש
         risk_mapping = {
             0: "Low Risk of Stroke",
             1: "High Risk of Stroke"
         }
         result = {
             "risk_level": risk_mapping.get(prediction, "Unknown"),
-            "probability": round(probability * 100, 2)  # סיכוי באחוזים
+            "probability": round(probability * 100, 2)
         }
 
+        logger.debug("Prediction result: %s", result)
         return jsonify(result), 200
 
     except Exception as e:
+        logger.exception("An error occurred while processing the request")
         return jsonify({"error": str(e)}), 500
 
     finally:
+        logger.debug("Closing database connection")
         connection.close()
+
 
 @app.route('/api/predict_depression', methods=['GET'])
 def predict_depression():
