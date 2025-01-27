@@ -68,7 +68,7 @@ function SignUp({ onClose }) {
                     <PasswordFields required setUserPassword={setPassword} setUserPasswordVerify={setPasswordVerify} />
                     <BirthDateField required setAge={setAge} />
                     <HeightWeightField required setWeight={setWeight} setHeight={setHeight} />
-                    <GenderField option1="Female" option2="Male" option3="Other" required setGender={setGender} />
+                    <GenderField option1="Male" option2="Female" option3="Other" required setGender={setGender} />
                     {errorMessage && <p className="text-danger">{errorMessage}</p>}
                     <button className="btn btn-success btn-sign" type="submit">Sign up</button>
                 </form>

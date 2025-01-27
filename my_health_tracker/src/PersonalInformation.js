@@ -54,7 +54,7 @@ function PersonalInformation({ userData, setUserData }) {
       {userData ? (
         <div className="user-info">
           <p><strong>Username:</strong> {userData.username}</p>
-          <p><strong>Gender:</strong> {userData.gender === 1 ? "Male" : "Female"}</p>
+          <p><strong>Gender:</strong> {userData.gender === 1 ? "Male" : userData.gender === 2 ? "Female" : "Other"}</p>
           <p><strong>BMI:</strong> {userData.BMI}</p>
 
           <button className="edit-btn" onClick={() => setIsEditing(!isEditing)}>
