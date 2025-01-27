@@ -49,7 +49,7 @@ def get_db_connection():
     return pymysql.connect(
         host="localhost",
         user="root",
-        password="DANI",
+        password="Shiran0606!",
         database="myhealthtracker",
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -526,60 +526,79 @@ def predict_heart_disease():
 
 @app.route('/api/compare_tests', methods=['GET'])
 def compare_tests():
-    connection = get_db_connection()
+    username = request.args.get('username')
     smoking = request.args.get('smoking')
     drinking = request.args.get('drinking')
     physical_activity = request.args.get('physical_activity')
     education_levels = request.args.get('education_levels')
     age_group = request.args.get('age_group')
 
-    if not all([smoking, drinking, physical_activity, education_levels, age_group]):
-        return jsonify({"error": "Missing required parameters"}), 400
+    if not (username and smoking and drinking and physical_activity and education_levels and age_group):
+        return jsonify({'error': 'Missing required parameters'}), 400
 
-    query = """
-   SELECT 
-    ut.test_name,
-    AVG(ut.value) AS avg_value,
-    STDDEV(ut.value) AS std_dev,
-    MIN(ut.value) AS min_value,
-    MAX(ut.value) AS max_value,
-    tv.lower_limit,
-    tv.upper_limit,
-    JSON_ARRAYAGG(FLOOR(ut.value / 10) * 10) AS histogram
-FROM 
-    User_Tests ut
-JOIN 
-    Users u ON ut.username = u.username
-JOIN 
-    Life_style ls ON u.username = ls.user_username
-JOIN 
-    Tests_Values tv ON ut.test_name = tv.test_name
-JOIN (SELECT username FROM Users ORDER BY RAND() LIMIT 1000) AS random_users ON u.username = random_users.username 
-WHERE 
-    ls.smoking = %s
-    AND ls.drinking = %s
-    AND ls.physical_activity = %s
-    AND ls.education_levels = %s
-    AND tv.age_group = %s
-GROUP BY 
-    ut.test_name, tv.lower_limit, tv.upper_limit;
-    """
-
+    connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            cursor.execute(query, (smoking, drinking, physical_activity, education_levels, age_group))
-            results = cursor.fetchall()
-        for result in results:
-            if not result['histogram']:
-                print(f"Warning: Histogram for test {result['test_name']} is empty.")
-        print("Results from database:", results)  
+            # Step 1: Create a temporary table
+            cursor.execute("""
+                CREATE TEMPORARY TABLE temp_similar_users AS
+                SELECT username 
+                FROM Users 
+                JOIN Life_style ON Users.username = Life_style.user_username
+                WHERE age_group = %s 
+                  AND education_levels = %s
+                  AND smoking = %s
+                  AND drinking = %s
+                  AND physical_activity = %s
+                LIMIT 1000;
+            """, (age_group, education_levels, smoking, drinking, physical_activity))
 
-        return jsonify(results), 200
+            # Step 2: Fetch test results for the target user
+            cursor.execute("""
+                SELECT test_name, value AS user_value
+                FROM User_Tests
+                WHERE username = %s;
+            """, (username,))
+            user_tests = cursor.fetchall()
+
+            # Step 3: Generate histogram data for similar users
+            cursor.execute("""
+                SELECT 
+                    test_name,
+                    FLOOR(value / 10) * 10 AS bin,
+                    COUNT(*) AS frequency
+                FROM User_Tests
+                WHERE username IN (SELECT username FROM temp_similar_users)
+                GROUP BY test_name, bin
+                ORDER BY test_name, bin;
+            """)
+            histograms = cursor.fetchall()
+
+            # Cleanup: Drop the temporary table
+            cursor.execute("DROP TEMPORARY TABLE IF EXISTS temp_similar_users;")
+
+        # Process the results into a structured response
+        histogram_dict = {}
+        for row in histograms:
+            test_name = row['test_name']
+            if test_name not in histogram_dict:
+                histogram_dict[test_name] = []
+            histogram_dict[test_name].append({'bin': row['bin'], 'frequency': row['frequency']})
+
+        result = {
+            "user_tests": {test['test_name']: test['user_value'] for test in user_tests},
+            "histograms": histogram_dict
+        }
+
+        return jsonify(result), 200
+
     except Exception as e:
-        print(f"Error executing query: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
+
     finally:
         connection.close()
+
+
 
 @app.route('/api/comparison_analysis', methods=['GET'])
 def comparison_analysis():
