@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import LifestyleQuestionnaire from "./LifestyleQuestionnaire";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -26,7 +25,7 @@ ChartJS.register(
   Filler
 );
 
-const ComparisonAnalysis = ({ userData, limitsMap, setActiveTab }) => {
+const ComparisonAnalysis = ({ userData, setActiveTab }) => {
   const [comparisonData, setComparisonData] = useState(null);
   const [testList, setTestList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -151,25 +150,28 @@ const ComparisonAnalysis = ({ userData, limitsMap, setActiveTab }) => {
               <Line
                 data={{
                   labels: bins,
-                  datasets: [
-                    {
-                      label: "Population Distribution",
-                      data: frequencies,
-                      backgroundColor: "rgba(75, 192, 192, 0.4)",
-                      borderColor: "rgba(75, 192, 192, 1)",
-                      borderWidth: 1,
-                      fill: true,
-                    },
-                    {
-                      label: "Your Value",
-                      data: bins.map((_, idx) => (idx === bins.indexOf(userValue) ? frequencies[idx] : null)),
-                      backgroundColor: "rgba(255, 99, 132, 1)",
-                      borderColor: "rgba(255, 99, 132, 1)",
-                      borderWidth: 3,
-                      pointRadius: 6,
-                      pointBackgroundColor: "rgba(255, 99, 132, 1)",
-                    },
-                  ],
+                 datasets: [
+  {
+    label: "Population Distribution",
+    data: frequencies,
+    backgroundColor: "rgba(75, 192, 192, 0.4)",
+    borderColor: "rgba(75, 192, 192, 1)",
+    borderWidth: 1,
+    fill: true,
+  },
+  {
+    label: "Your Value",
+    data: bins.map((_, idx) => (bins[idx] === userValue ? frequencies[idx] : null)),
+    backgroundColor: "rgba(255, 99, 132, 1)",
+    borderColor: "rgba(255, 99, 132, 1)",
+    borderWidth: 3,
+    pointRadius: 6,
+    pointBackgroundColor: "rgba(255, 99, 132, 1)",
+  },
+
+],
+
+
                 }}
                 options={{
                   responsive: true,
@@ -189,8 +191,15 @@ const ComparisonAnalysis = ({ userData, limitsMap, setActiveTab }) => {
                   },
                 }}
               />
-              <p style={{ color: "red" }}>Your Value: {userValue?.toFixed(1)}</p>
-              <p style={{ fontWeight: "bold" }}>{conclusion}</p>
+             {userValue !== null ? (
+  <>
+    <p style={{ color: "red" }}>Your Value: {userValue?.toFixed(1)}</p>
+    <p style={{ fontWeight: "bold" }}>{conclusion}</p>
+  </>
+) : (
+  <p style={{ color: "gray", fontWeight: "bold" }}>No value available for comparison.</p>
+)}
+
             </div>
           );
         })}
