@@ -230,7 +230,6 @@ def predict_diabetes():
     finally:
         connection.close()
 
-
 @app.route('/api/predict_stroke', methods=['GET'])
 def predict_stroke():
     username = request.args.get('username')
@@ -241,14 +240,15 @@ def predict_stroke():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # Fetch user data
+            # Fetch user data including marital_status from Life_style
             cursor.execute("""
                 SELECT 
                     Users.gender,
                     Users.age,
                     Users.height,
                     Users.weight,
-                    Life_style.smoking
+                    Life_style.smoking,
+                    Life_style.marital_status  -- Added marital status field
                 FROM Users
                 LEFT JOIN Life_style ON Users.username = Life_style.user_username
                 WHERE Users.username = %s
@@ -282,13 +282,19 @@ def predict_stroke():
         BMI = round(user_data['weight'] / (height_in_meters ** 2), 2)
         hypertension = 1 if (test_values['BP_HIGH'] > 140 or test_values['BP_LWST'] > 90) else 0
 
+        # Convert marital_status to ever_married
+        marital_status = user_data.get('marital_status', 1)  # Default to 1 (Single) if missing
+        ever_married = 1 if marital_status in [2, 3, 4] else 0  # 1 if Married, Divorced, or Widowed; 0 if Single
+
+        # Updated feature list
         features = [
-            user_data['gender'],
-            user_data['age'],
-            hypertension,
-            test_values['BLDS'],
-            BMI,
-            user_data['smoking']
+            user_data['gender'],   # "gender"
+            user_data['age'],      # "age"
+            hypertension,          # "hypertension"
+            ever_married,          # "ever_married" (NEW)
+            test_values['BLDS'],   # "avg_glucose_level"
+            BMI,                   # "bmi"
+            user_data['smoking']   # "smoking_status"
         ]
 
         # Load and use model
@@ -308,6 +314,7 @@ def predict_stroke():
 
     finally:
         connection.close()
+
 
 
 @app.route('/api/predict_depression', methods=['GET'])
