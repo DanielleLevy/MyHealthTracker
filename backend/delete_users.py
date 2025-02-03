@@ -2,7 +2,7 @@ import pymysql
 
 
 def delete_user_tests_in_batches(batch_size=1000):
-    # התחברות למסד הנתונים
+
     connection = pymysql.connect(
         host="localhost",
         user="root",
@@ -13,7 +13,7 @@ def delete_user_tests_in_batches(batch_size=1000):
 
     try:
         with connection.cursor() as cursor:
-            # יצירת טבלה זמנית
+            # create a temporary table to store users to delete
             cursor.execute("""
                 CREATE TEMPORARY TABLE TempUsersToDelete (
                     username VARCHAR(255)
@@ -21,7 +21,7 @@ def delete_user_tests_in_batches(batch_size=1000):
             """)
 
             while True:
-                # הכנסת משתמשים לטבלה הזמנית
+                # insert users to delete into the temporary table
                 cursor.execute(f"""
                     INSERT INTO TempUsersToDelete (username)
                     SELECT username
@@ -29,29 +29,29 @@ def delete_user_tests_in_batches(batch_size=1000):
                     LIMIT {batch_size}
                 """)
 
-                # בדיקה אם יש עוד משתמשים למחוק
+                # check if there are any users to delete
                 if cursor.rowcount == 0:
                     print("No more users to delete.")
                     break
 
-                # מחיקת בדיקות
+                # delete user tests
                 cursor.execute("""
                     DELETE FROM User_Tests
                     WHERE username IN (SELECT username FROM TempUsersToDelete)
                 """)
                 print(f"Deleted {cursor.rowcount} records from User_Tests.")
 
-                # מחיקת המשתמשים מטבלת UsersToDelete
+                # delete users from UsersToDelete
                 cursor.execute("""
                     DELETE FROM UsersToDelete
                     WHERE username IN (SELECT username FROM TempUsersToDelete)
                 """)
                 print(f"Deleted {cursor.rowcount} users from UsersToDelete.")
 
-                # ניקוי הטבלה הזמנית
+                # clear the temporary table
                 cursor.execute("TRUNCATE TABLE TempUsersToDelete")
 
-                # שמירת השינויים
+                # save the changes
                 connection.commit()
 
     except Exception as e:
@@ -61,5 +61,5 @@ def delete_user_tests_in_batches(batch_size=1000):
         connection.close()
 
 
-# קריאה לפונקציה
+
 delete_user_tests_in_batches(batch_size=500)

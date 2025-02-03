@@ -10,7 +10,7 @@ mydb = mysql.connector.connect(
 mycursor = mydb.cursor()
 
 try:
-    # יצירת אינדקסים
+
     index_queries = [
         "ALTER TABLE Users ADD INDEX idx_username (username);",
         "ALTER TABLE User_Tests ADD INDEX idx_username_testname (username, test_name);",
@@ -19,7 +19,7 @@ try:
     ]
 
     for query in index_queries:
-        print(f"Executing query: {query}")  # הדפסה לניטור
+        print(f"Executing query: {query}")  
         mycursor.execute(query)
         mydb.commit()
         print("Index created successfully.")

@@ -11,18 +11,22 @@ connection = pymysql.connect(
     password="DANI",
     database="myhealthtracker"
 )
-
-# שם הקובץ לטעינה
+#file path
+#csv_file = "../data/2015.csv"
+#csv_file = "../data/2016.csv"
+#csv_file = "../data/2017.csv"
+#csv_file = "../data/2018.csv"
+#csv_file = "../data/2019.csv"
 csv_file = "../data/2020.csv"
 
-# רשימת כל הבדיקות
+# test columns to be inserted to the DB
 test_columns = [
     "BP_HIGH", "BP_LWST", "BLDS", "TOT_CHOLE", "TRIGLYCERIDE",
     "HDL_CHOLE", "LDL_CHOLE", "CREATININE", "HMG",
     "OLIG_PROTE_CD", "SGOT_AST", "SGPT_ALT", "GAMMA_GTP"
 ]
 
-# מיפוי של AGE_GROUP לטווח גילאים
+# age group to age range mapping
 age_group_to_range = {
     1: (0, 4), 2: (5, 9), 3: (10, 14), 4: (15, 19),
     5: (20, 24), 6: (25, 29), 7: (30, 34), 8: (35, 39),
@@ -36,12 +40,10 @@ def is_valid_date(date_str):
     except ValueError:
         return False
 
-# חישוב גיל רנדומלי על בסיס AGE_GROUP
 def generate_age(age_group):
     age_range = age_group_to_range.get(age_group, (0, 0))
     return random.randint(age_range[0], age_range[1])
 
-# עיבוד מקטע בודד של נתונים
 def process_chunk(chunk):
     with connection.cursor() as cursor:
         print(f"Processing chunk with {len(chunk)} rows...")
@@ -62,15 +64,15 @@ def process_chunk(chunk):
         """
         cursor.executemany(user_query, user_data)
 
-        # Batch Insert ל-User_Tests
+        # Batch Insert to User_Tests
         for test in test_columns:
             if test in chunk.columns:
                 test_data = chunk[["IDV_ID", "DATE", test]].dropna(subset=[test])
                 test_data = test_data.rename(columns={test: "value"})
                 test_data["test_name"] = test
-                # סינון תאריכים לא תקינים
+                # filter out invalid dates
                 test_data = test_data[test_data['DATE'].apply(is_valid_date)]
-                # עדכון פורמט התאריכים
+                # update date format
                 test_data['DATE'] = pd.to_datetime(test_data['DATE'], errors='coerce').dt.strftime('%Y-%m-%d')
 
                 batch_data = [(row['IDV_ID'], row['test_name'], row['DATE'], row['value']) for _, row in test_data.iterrows()]
@@ -83,21 +85,21 @@ def process_chunk(chunk):
 
         connection.commit()
 
-# קריאת הנתונים
+
 try:
     print(f"Processing file: {csv_file}")
     data = pd.read_csv(csv_file)
 
-    # חישוב AGE וערכים רנדומליים
+#random values for the missing data
     data['AGE'] = data['AGE_GROUP'].apply(generate_age)
     print("Sample of calculated AGE values:")
     print(data[['IDV_ID', 'AGE_GROUP', 'AGE']].head(10))
 
-    # חלוקת הנתונים למקטעים (ללא תרדים)
+#data split to chunks
     chunk_size = 10000
     chunks = [data.iloc[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
-    # עיבוד כל מקטע באופן סדרתי
+
     for chunk in chunks:
         process_chunk(chunk)
 

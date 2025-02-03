@@ -5,9 +5,10 @@ from datetime import datetime, date
 import joblib
 app = Flask(__name__)
 CORS(app) 
+
 @app.route('/api/user_data', methods=['GET'])
 def get_user_data():
-    username = request.args.get('username')  # לדוגמה, המשתמש המחובר
+    username = request.args.get('username') 
 
     if not username:
         return jsonify({'error': 'Username is required'}), 400
@@ -44,12 +45,11 @@ def get_user_data():
         connection.close()
 
 
-# פונקציה להתחברות למסד הנתונים
 def get_db_connection():
     return pymysql.connect(
         host="localhost",
         user="root",
-        password="DANI",
+        password="Shiran0606!",
         database="myhealthtracker",
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -94,11 +94,13 @@ def get_user_tests():
             cursor.execute(query, (username,))
             tests = cursor.fetchall() 
 
-        return jsonify({"tests": tests}), 200  # החזרת הבדיקות בפורמט JSON
+        return jsonify({"tests": tests}), 200  
     except Exception as e:
-        return jsonify({"error": str(e)}), 500  # החזרת שגיאה במקרה של בעיה
+        return jsonify({"error": str(e)}), 500
     finally:
-        connection.close()  # סגירת החיבור למסד הנתונים
+        connection.close() 
+        
+         
 @app.route('/api/predict_diabetes', methods=['GET'])
 def predict_diabetes():
     username = request.args.get('username')
@@ -113,11 +115,11 @@ def predict_diabetes():
         9: (60, 64), 10: (65, 69), 11: (70, 74), 12: (75, 79),
         13: (80, 100)}
 
-    # שלב 1: שליפת נתוני המשתמש ממסד הנתונים
+    
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # שליפת נתוני Life_style ונתוני משתמש כלליים
+            # fetch user data including lifestyle data
             cursor.execute("""
                 SELECT 
                     Users.age,
@@ -137,7 +139,7 @@ def predict_diabetes():
             if not user_data:
                 return jsonify({"error": "User not found"}), 404
 
-            # שלב 2: שליפת בדיקות (BP_HIGH, BP_LWST, TOT_CHOLE) מ-User_Tests
+            # fetch required tests
             cursor.execute("""
                 SELECT 
                     test_name, value
@@ -146,10 +148,10 @@ def predict_diabetes():
             """, (username,))
             test_data = cursor.fetchall()
 
-            # עיבוד בדיקות לשליפה מהירה לפי שם
+            # prepare test data
             test_values = {row['test_name']: float(row['value']) for row in test_data}
 
-            # בדיקה שכל הנתונים קיימים
+            # check for missing tests
             required_tests = ['BP_HIGH', 'BP_LWST', 'TOT_CHOLE']
             missing_tests = [test for test in required_tests if test not in test_values]
 
@@ -158,60 +160,52 @@ def predict_diabetes():
                     "error": "Missing test data",
                     "missing_tests": missing_tests
                 }), 200
-        # שלב 3: חישוב והתאמות נתונים
-        # 3.1: חישוב BMI
+
+        # BMI calculation
         if user_data['height'] and user_data['weight']:
             height_in_meters = user_data['height'] / 100
             BMI = round(user_data['weight'] / (height_in_meters ** 2), 2)
         else:
             return jsonify({"error": "Missing height or weight for BMI calculation"}), 400
 
-        # 3.2: מיפוי גיל לקבוצת גיל
+        # age group calculation
         age = user_data['age']
         age_group = next((group for group, (min_age, max_age) in age_group_mapping.items() if min_age <= age <= max_age), None)
         if not age_group:
             return jsonify({"error": "Age is out of range"}), 400
 
-        # 3.3: חישוב לחץ דם גבוה
+        # calculate features
         HighBP = 1 if (test_values['BP_HIGH'] > 140 or test_values['BP_LWST'] > 90) else 0
-
-        # 3.4: חישוב כולסטרול גבוה
         HighChol = 1 if test_values['TOT_CHOLE'] > 200 else 0
-
-        # 3.5: מיפוי עישון ל-0/1
         Smoker = 1 if user_data['smoking'] in [2, 3] else 0
-
-        # 3.6: מיפוי פעילות גופנית ל-0/1
         PhysActivity = 1 if user_data['physical_activity'] in [2, 3] else 0
-
-        # 3.7: מיפוי שתייה ל-0/1
         HvyAlcoholConsump = 1 if user_data['drinking'] == 1 else 0
 
-        # שלב 4: הכנת הפיצ'רים למודל
+        # prepare features
         features = [
-            HighBP,           # לחץ דם גבוה
-            HighChol,         # כולסטרול גבוה
-            BMI,              # BMI
-            Smoker,           # עישון
-            PhysActivity,     # פעילות גופנית
-            HvyAlcoholConsump, # שתייה
+            HighBP,           
+            HighChol,         
+            BMI,              
+            Smoker,           
+            PhysActivity,     
+            HvyAlcoholConsump, 
             user_data['gender'],
-            user_data['education_levels'],  # רמת השכלה
-            age_group         # קבוצת גיל
+            user_data['education_levels'],  
+            age_group         
         ]
 
-        # שלב 5: טעינת המודל
+        # load the model
         import joblib
         model_path = '../models/best_diabetes_model_Gradient Boosting.pkl'
         diabetes_model = joblib.load(model_path)
         print(f"User data fetched: {user_data}")
         print(f"Prepared features: {features}")
 
-        # שלב 6: חיזוי
+        # make prediction
         prediction = diabetes_model.predict([features])[0]
         probability = diabetes_model.predict_proba([features])[0][int(prediction)]
 
-        # שלב 7: תרגום התוצאה לתגובה למשתמש
+        # map prediction to risk level
         risk_mapping = {
             0: "Low Risk of Diabetes",
             1: "Moderate Risk (Pre-Diabetes)",
@@ -219,7 +213,7 @@ def predict_diabetes():
         }
         result = {
             "risk_level": risk_mapping.get(prediction, "Unknown"),
-            "probability": round(probability * 100, 2)  # סיכוי באחוזים
+            "probability": round(probability * 100, 2)  # convert to percentage
         }
 
         return jsonify(result), 200
@@ -522,61 +516,6 @@ def compare_tests():
         connection.close()
 
 
-
-@app.route('/api/comparison_analysis', methods=['GET'])
-def comparison_analysis():
-    connection = get_db_connection()
-
-    smoking = request.args.get('smoking')
-    drinking = request.args.get('drinking')
-    physical_activity = request.args.get('physical_activity')
-    education_levels = request.args.get('education_levels')
-    age_group = request.args.get('age_group')
-
-    if not all([smoking, drinking, physical_activity, education_levels, age_group]):
-        return jsonify({"error": "Missing required parameters"}), 400
-
-    query = """
-    SELECT 
-        ut.test_name,
-        AVG(ut.value) AS avg_value,
-        STDDEV(ut.value) AS std_dev,
-        MIN(ut.value) AS min_value,
-        MAX(ut.value) AS max_value,
-        tv.lower_limit,
-        tv.upper_limit
-    FROM 
-        User_Tests ut
-    JOIN 
-        Users u ON ut.username = u.username
-    JOIN 
-        Life_style ls ON u.username = ls.user_username
-    JOIN 
-        Tests_Values tv ON ut.test_name = tv.test_name
-    WHERE 
-        ls.smoking = %s
-        AND ls.drinking = %s
-        AND ls.physical_activity = %s
-        AND ls.education_levels = %s
-        AND tv.age_group = %s
-    GROUP BY 
-        ut.test_name, tv.lower_limit, tv.upper_limit;
-    """
-
-    try:
-        # ביצוע השאילתה
-        print(f"Executing query with parameters: {smoking}, {drinking}, {physical_activity}, {education_levels}, {age_group}")
-        with connection.cursor() as cursor:
-            cursor.execute(query, (smoking, drinking, physical_activity, education_levels, age_group))
-            results = cursor.fetchall()
-            print("Query Results:", results)  
-        return jsonify(results), 200
-    except Exception as e:
-        print("Error executing query:", e) 
-        return jsonify({"error": str(e)}), 500
-    finally:
-        connection.close()
-
 @app.route('/api/get_tests', methods=['GET'])
 def get_tests():
     connection = get_db_connection()
@@ -590,7 +529,7 @@ def get_tests():
         return jsonify({'error': str(e)}), 500
     finally:
         connection.close()
-@app.route('/api/get_test_limits', methods=['GET'])
+
 @app.route('/api/get_all_test_limits', methods=['GET'])
 def get_all_test_limits():
     username = request.args.get('username')
@@ -630,33 +569,33 @@ def get_all_test_limits():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
-    print("Received data:", data)  # לוג לבדיקת הנתונים שהגיעו לשרת
+    print("Received data:", data)  
 
     username = data.get('username')
     password = data.get('password')
 
-    # בדיקת שם משתמש וסיסמה
+    # check if username and password are provided
     if not username or not password:
-        print("Missing username or password")  # לוג לשגיאה
+        print("Missing username or password")  
         return jsonify({"error": "Username and password are required"}), 400
 
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # ביצוע שאילתה
+
             cursor.execute(
                 "SELECT * FROM Users WHERE username = %s AND password = %s",
                 (username, password)
             )
             user = cursor.fetchone()
-            print("Query result:", user)  # לוג לתוצאות השאילתה
+            print("Query result:", user)  
 
-        # אם המשתמש נמצא
+
         if user:
-            print("Login successful for user:", username)  # לוג להתחברות מוצלחת
+            print("Login successful for user:", username)  
             return jsonify({"success": True, "user": user}), 200
         else:
-            print("Invalid username or password")  # לוג להתחברות כושלת
+            print("Invalid username or password")  
             return jsonify({"success": False, "message": "Invalid username or password"}), 401
     finally:
         connection.close()
@@ -702,7 +641,7 @@ def get_age_group(age):
     for group, (min_age, max_age) in age_group_to_range.items():
         if min_age <= age <= max_age:
             return group
-    return None  # במקרה שהגיל לא נמצא בטווחים
+    return None  
 
 
 @app.route('/api/signup', methods=['POST'])
@@ -723,7 +662,7 @@ def signup():
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # בדיקה אם שם המשתמש כבר קיים
+            # check if the username already exists
             cursor.execute("SELECT username FROM Users WHERE username = %s", (username,))
             if cursor.fetchone():
                 return jsonify({"success": False, "message": "Username already exists"}), 400
@@ -753,7 +692,6 @@ def get_health_alerts():
     try:
         cursor = connection.cursor()
 
-        # בדיקת קבוצת גיל
         cursor.execute("SELECT age_group FROM Users WHERE username = %s", (username))
         user = cursor.fetchone()
 
@@ -763,7 +701,6 @@ def get_health_alerts():
         
         age_group_id = user['age_group']
 
-        # בדיקת בדיקות אחרונות לכל test_name
         cursor.execute("""
             SELECT t.test_name, ts.full_name, t.test_date, t.value, v.lower_limit, v.upper_limit 
             FROM User_Tests t
@@ -788,7 +725,6 @@ def get_health_alerts():
         for test in test_results:
             test_name = test['full_name']
 
-            # ערכים מתוך מסד הנתונים
             try:
                 test_value = float(test['value']) if test['value'] is not None else None
                 lower_limit = float(test['lower_limit']) if test['lower_limit'] is not None else None
@@ -798,7 +734,6 @@ def get_health_alerts():
                 print(f"ValueError for test {test_name}: {str(ve)}")
                 continue
 
-            # בדיקה אם יש חריגה
             if upper_limit is not None and test_value > upper_limit:
                 alerts.append(f"High {test_name} detected!")
             if lower_limit is not None and test_value < lower_limit:
