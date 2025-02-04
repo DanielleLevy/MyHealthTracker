@@ -235,7 +235,7 @@ const fetchAllLimits = async () => {
                     <i className="fas fa-chart-bar"></i> Comparison Analysis
                 </li>
                 <li className={activeTab === "lifeStyle" ? "active" : ""} onClick={() => setActiveTab("lifeStyle")}>
-                    <i className="fas fa-brain"></i> Life Style
+                  <i className="fas fa-spa"></i> Lifestyle
                 </li>
                 <li className={activeTab === "PersonalInformation" ? "active" : ""}
                     onClick={() => setActiveTab("PersonalInformation")}>
