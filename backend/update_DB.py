@@ -4,7 +4,6 @@ import random
 import datetime
 
 
-# התחברות למסד הנתונים
 connection = pymysql.connect(
     host="localhost",
     user="root",

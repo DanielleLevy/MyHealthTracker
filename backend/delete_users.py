@@ -34,9 +34,23 @@ def delete_user_tests_in_batches(batch_size=1000):
                     print("No more users to delete.")
                     break
 
-                # delete user tests
+                # delete users from User_Tests
                 cursor.execute("""
                     DELETE FROM User_Tests
+                    WHERE username IN (SELECT username FROM TempUsersToDelete)
+                """)
+                print(f"Deleted {cursor.rowcount} records from User_Tests.")
+
+                # delete users from Life_style
+                cursor.execute("""
+                    DELETE FROM Life_style
+                    WHERE username IN (SELECT username FROM TempUsersToDelete)
+                """)
+                print(f"Deleted {cursor.rowcount} records from User_Tests.")
+
+                # delete users from Users
+                cursor.execute("""
+                    DELETE FROM Users
                     WHERE username IN (SELECT username FROM TempUsersToDelete)
                 """)
                 print(f"Deleted {cursor.rowcount} records from User_Tests.")
