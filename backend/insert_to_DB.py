@@ -9,12 +9,7 @@ connection = pymysql.connect(
     database="myhealthtracker"
 )
 
-#csv_file = "../data/2015.csv"
-#csv_file = "../data/2016.csv"
-#csv_file = "../data/2017.csv"
-#csv_file = "../data/2018.csv"
-#csv_file = "../data/2019.csv"
-csv_file = "../data/2002.csv"
+csv_file = "../data/2015.csv"
 
 # test names to be inserted to the DB
 test_columns = [

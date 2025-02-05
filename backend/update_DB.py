@@ -11,7 +11,6 @@ connection = pymysql.connect(
     database="myhealthtracker"
 )
 #file path
-#csv_file = "../data/2015.csv"
 #csv_file = "../data/2016.csv"
 #csv_file = "../data/2017.csv"
 #csv_file = "../data/2018.csv"
