@@ -108,7 +108,7 @@ try:
     # insert tests data
     for test in test_columns:
         if test in data.columns:
-            test_data = data[["IDV_ID", "DATE", test]].dropna(subset=[test])  # הסרת NaN
+            test_data = data[["IDV_ID", "DATE", test]].dropna(subset=[test])  # filter out NaN values
             test_data = test_data.rename(columns={test: "value"})
             test_data["test_name"] = test
             for _, test_row in test_data.iterrows():

@@ -242,7 +242,7 @@ def predict_stroke():
                     Users.height,
                     Users.weight,
                     Life_style.smoking,
-                    Life_style.marital_status  -- Added marital status field
+                    Life_style.marital_status  
                 FROM Users
                 LEFT JOIN Life_style ON Users.username = Life_style.user_username
                 WHERE Users.username = %s

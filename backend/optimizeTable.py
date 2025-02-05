@@ -14,6 +14,10 @@ try:
   # Increase timeout value (optional, already done previously)
   # mycursor.execute("SET SESSION wait_timeout = 28800")
   # mycursor.execute("SET SESSION interactive_timeout = 28800")
+  
+  # mycursor.execute("OPTIMIZE TABLE Users")
+  # mycursor.execute("OPTIMIZE TABLE Life_style")
+
   mycursor.execute("OPTIMIZE TABLE User_Tests")
   # Read any results (optional)
   mycursor.fetchall()
