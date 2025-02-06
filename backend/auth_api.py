@@ -447,10 +447,10 @@ def compare_tests():
     smoking = request.args.get('smoking')
     drinking = request.args.get('drinking')
     physical_activity = request.args.get('physical_activity')
-    education_levels = request.args.get('education_levels')
     age_group = request.args.get('age_group')
+    gender = request.args.get('gender')
 
-    if not (username and smoking and drinking and physical_activity and education_levels and age_group):
+    if not (username and smoking and drinking and physical_activity and age_group and gender):
         return jsonify({'error': 'Missing required parameters'}), 400
 
     connection = get_db_connection()
@@ -462,13 +462,13 @@ def compare_tests():
                 SELECT username 
                 FROM Users 
                 JOIN Life_style ON Users.username = Life_style.user_username
-                WHERE age_group = %s 
-                  AND education_levels = %s
+                WHERE age_group = %s
+                  AND gender = %s 
                   AND smoking = %s
                   AND drinking = %s
                   AND physical_activity = %s
                 LIMIT 1000;
-            """, (age_group, education_levels, smoking, drinking, physical_activity))
+            """, (age_group, gender, smoking, drinking, physical_activity))
 
             # Step 2: Fetch test results for the target user
             cursor.execute("""

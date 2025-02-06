@@ -46,25 +46,29 @@ const ComparisonAnalysis = ({ userData, setActiveTab }) => {
   }, []);
 
   useEffect(() => {
+    console.log("useEffect triggered. userData:", userData);
     if (userData) {
-      const { username, smoking, drinking, physical_activity, education_levels, age_group } = userData;
+      const { username, smoking, drinking, physical_activity, gender, age_group } = userData;
 
-      if (!username || smoking === undefined || drinking === undefined || physical_activity === undefined || education_levels === undefined || age_group === undefined) {
+      if (!username || smoking === undefined || drinking === undefined || physical_activity === undefined || gender === undefined|| age_group === undefined) {
         setError("Missing lifestyle data. Please complete your profile.");
         return;
       }
-
-      fetchComparisonData(username, smoking, drinking, physical_activity, education_levels, age_group);
+      console.log("Calling fetchComparisonData with:", {
+        username, smoking, drinking, physical_activity, gender, age_group
+      });
+      
+      fetchComparisonData(username, smoking, drinking, physical_activity, gender, age_group);
     }
   }, [userData]);
 
-  const fetchComparisonData = async (username, smoking, drinking, physical_activity, education_levels, age_group) => {
+  const fetchComparisonData = async (username, smoking, drinking, physical_activity, gender, age_group) => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await axios.get("http://localhost:5001/api/compare_tests", {
-        params: { username, smoking, drinking, physical_activity, education_levels, age_group },
+        params: { username, smoking, drinking, physical_activity, gender, age_group },
       });
 
       console.log("API response:", response.data);
