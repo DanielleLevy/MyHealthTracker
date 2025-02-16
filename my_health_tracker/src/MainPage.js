@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./MainPage.css";
 import logo from './loginPage/welcome/logo.png';
@@ -11,6 +12,7 @@ import RiskPredictions from "./RiskPredictions";
 
 
 function MainPage() {
+  const navigate = useNavigate();
   const [username, setUsername] = useState(localStorage.getItem("username") || "User");
   const [showReminders, setShowReminders] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
@@ -163,8 +165,14 @@ const fetchAllLimits = async () => {
     return (weight / (heightInMeters * heightInMeters)).toFixed(2);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("username");
+    navigate("/");
+  };
+
   const handleAddTestClick = () => {
     setShowAddTestModal(true);
+
 
     axios.get('http://localhost:5001/api/get_tests')
       .then((response) => {
@@ -249,12 +257,21 @@ const fetchAllLimits = async () => {
         <div className="content">
             <header className="navbar">
                 <h1 className="welcome-text">Welcome, {username}!</h1>
+              <div className="navbar-actions">
+
                 <button className="reminder-btn" onClick={() => setShowReminders(!showReminders)}>
             <i className="fas fa-bell"></i>
             {healthAlerts.length > 0 && (
               <span className="notification-badge">{healthAlerts.length}</span>
             )}
           </button>
+
+          {/* Logout Button */}
+          <button className="logout-btn" onClick={handleLogout} title="Logout">
+            <i className="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+
           {showReminders && (
             <div className="reminders-popover">
               <h2>Health Alerts</h2>

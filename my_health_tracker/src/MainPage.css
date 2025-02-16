@@ -77,7 +77,6 @@ body {
     padding: 10px 20px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
@@ -422,3 +421,27 @@ body {
     margin-top: 15px;
     font-size: 40px;
   }
+
+/* Logout Button - Only Icon */
+.logout-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #8a3b3f; /* Maroon */
+    cursor: pointer;
+    margin-left: 15px;
+    transition: color 0.3s ease;
+    position: relative;
+}
+
+
+.logout-btn:hover::after {
+    opacity: 1;
+}
+
+/* Hover effect */
+.logout-btn:hover {
+    color: #6a0000; /* Darker Maroon */
+}
+
+
