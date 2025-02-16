@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "./loginPage/LoginPage";
 import MainPage from "./MainPage";
 import SignUp from "./signUp/SignUp"; 
+import PrivateRoute from "./PrivateRoute";
 
 function App() {
   const [showSignUp, setShowSignUp] = useState(false); 
@@ -29,7 +30,14 @@ function App() {
             )
           }
         />
-        <Route path="/mainpage" element={<MainPage />} />
+        <Route
+            path="/mainpage"
+            element={
+              <PrivateRoute>
+                <MainPage />
+              </PrivateRoute>
+            }
+          />
       </Routes>
     </Router>
     </div>
