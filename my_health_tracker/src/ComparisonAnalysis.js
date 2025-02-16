@@ -136,17 +136,23 @@ const ComparisonAnalysis = ({ userData, setActiveTab }) => {
 
           const userPercentile = calculatePercentile(userValue, bins, frequencies);
 
+          const normalRangeLower = mode * 0.95; // under 5% deviation
+          const normalRangeUpper = mode * 1.05; // above 5% deviation
+          const smallDeviation = mode * 0.05; // threshold for small deviation
+          
           const conclusion =
             userPercentile < 10
               ? "Your result is significantly lower than most users in your group."
               : userPercentile > 90
               ? "Your result is significantly higher than most users in your group."
-              : userValue < mode
-              ? "Your result is below the most common range among similar users."
-              : userValue > mode
-              ? "Your result is above the most common range among similar users."
-              : "Your result falls within the typical range of similar users.";
-
+              : Math.abs(userValue - mode) <= smallDeviation
+              ? "Your result is very close to the most common value among similar users."
+              : userValue >= normalRangeLower && userValue <= normalRangeUpper
+              ? "Your result falls within the typical range of similar users."
+              : userValue < normalRangeLower
+              ? "Your result is slightly below the most common range among similar users."
+              : "Your result is slightly above the most common range among similar users.";
+          
           return (
             <div key={index} style={{ marginBottom: "40px" }}>
               <h3>{fullName}</h3>
@@ -165,13 +171,19 @@ const ComparisonAnalysis = ({ userData, setActiveTab }) => {
   },
   {
     label: "Your Value",
-    data: bins.map((_, idx) => (bins[idx] === userValue ? frequencies[idx] : null)),
+    data: bins.map((bin, idx) => {
+      if (userValue !== null && userValue >= bin && (idx === bins.length - 1 || userValue < bins[idx + 1])) {
+        return frequencies[idx] || Math.max(...frequencies) / 2; // If no frequency, place in the middle
+      }
+      return null;
+    }),
     backgroundColor: "rgba(255, 99, 132, 1)",
     borderColor: "rgba(255, 99, 132, 1)",
     borderWidth: 3,
     pointRadius: 6,
     pointBackgroundColor: "rgba(255, 99, 132, 1)",
   },
+  
 
 ],
 
