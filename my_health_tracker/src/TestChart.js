@@ -115,7 +115,19 @@ const TestChart = ({ test }) => {
       <div className="chart-area">
         <Scatter data={data} options={options} />
       </div>
-      <p className="test-date">Last test: {last_test_date}</p>
+      <p className="test-subtitle">Last test: {last_test_date}</p>
+      <p className="test-subtitle">
+        {min_range !== null && max_range !== null ? (
+          <>Normal range: {min_range.toFixed(1)} - {max_range.toFixed(1)}</>
+        ) : min_range !== null ? (
+          <>Normal range: Above {min_range.toFixed(1)}</>
+        ) : max_range !== null ? (
+          <>Normal range: Below {max_range.toFixed(1)}</>
+        ) : (
+          <>No defined range</>
+        )}
+      </p>
+
       <div className="alerts">
         {is_out_of_range && <span className="alert">⚠ Out of range!</span>}
         {is_overdue && <span className="reminder">⏳ It's time for a follow-up test.</span>}
