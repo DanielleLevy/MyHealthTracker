@@ -1,49 +1,41 @@
 @echo off
-echo Starting the backend server...
+SET DB_NAME=myhealthtracker_sample
+SET DB_FILE=myhealthtracker_sample.sql
 
-REM Navigate to the backend directory
-cd /d "%~dp0backend" || (
-    echo Backend directory not found!
+:: Prompt for MySQL username
+set /p DB_USER="Enter MySQL username [default: root]: "
+if "%DB_USER%"=="" set DB_USER=root
+
+:: Prompt for MySQL password (note: password hiding is not supported in Windows cmd)
+set /p DB_PASSWORD="Enter MySQL password (leave blank if none): "
+
+echo Checking if MySQL is running...
+mysqladmin ping -h localhost --silent >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo ❌ MySQL is not running! Please start MySQL and try again.
     exit /b 1
 )
 
-REM Run the backend Python server
-start "Backend Server" cmd /c python auth_api.py
-set "BACKEND_PID=%ERRORLEVEL%"
+echo 🛠️ Creating database %DB_NAME% (if not exists)...
+mysql -u %DB_USER% -p%DB_PASSWORD% -e "CREATE DATABASE IF NOT EXISTS %DB_NAME%;"
 
-echo Backend server is running
+echo 📂 Importing database from %DB_FILE%...
+mysql -u %DB_USER% -p%DB_PASSWORD% %DB_NAME% < %DB_FILE%
 
-REM Navigate to the frontend directory
-echo Setting up the frontend...
-cd /d "%~dp0my_health_tracker" || (
-    echo Frontend directory not found!
-    exit /b 1
-)
+echo ✅ Database setup completed!
 
-REM Install frontend dependencies
-call npm install || (
-    echo npm install failed!
-    exit /b 1
-)
+echo 🚀 Starting the backend server...
+cd backend || exit /b 1
+start /B python auth_api.py
+echo ✅ Backend server started.
 
-REM Start the frontend server
-start "Frontend Server" cmd /c npm start
-set "FRONTEND_PID=%ERRORLEVEL%"
+echo 🛠️ Setting up the frontend...
+cd ../my_health_tracker || exit /b 1
+npm install
+start /B npm start
+echo ✅ Frontend server started.
 
-echo Frontend server is running
-
-REM Wait for user to press CTRL+C to stop servers
-echo Press CTRL+C to stop the servers.
-
-REM Trap CTRL+C to stop both servers
-:LOOP
-timeout /t 1 >nul
-goto LOOP
-
-REM Cleanup on exit
-:EXIT
-echo Stopping servers...
-taskkill /PID %BACKEND_PID% /F
-taskkill /PID %FRONTEND_PID% /F
-
-exit /b 0
+echo 🔄 All servers are running. Press any key to stop...
+pause
+taskkill /F /IM python.exe
+taskkill /F /IM node.exe
