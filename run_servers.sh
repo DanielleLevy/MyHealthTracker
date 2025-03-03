@@ -26,18 +26,24 @@ mysql -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$DB_FILE"
 
 echo "✅ Database setup completed!"
 
+# Install Python dependencies
+echo "🐍 Installing Python dependencies..."
+cd backend || { echo "❌ Backend directory not found!"; exit 1; }
+pip install -r requirements.txt || { echo "❌ Failed to install Python dependencies!"; exit 1; }
+
 # Start the backend server
 echo "🚀 Starting the backend server..."
-cd backend || { echo "❌ Backend directory not found!"; exit 1; }
 python3 auth_api.py &
 BACKEND_PID=$!
 
 echo "✅ Backend server is running (PID: $BACKEND_PID)"
 
-# Navigate to the frontend directory and start the server
+# Navigate to the frontend directory and install dependencies
 echo "🛠️ Setting up the frontend..."
 cd ../my_health_tracker || { echo "❌ Frontend directory not found!"; exit 1; }
 npm install || { echo "❌ npm install failed!"; exit 1; }
+
+# Start the frontend server
 npm start &
 FRONTEND_PID=$!
 
