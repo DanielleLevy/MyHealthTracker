@@ -27,7 +27,7 @@ echo ✅ Database setup completed!
 :: Install Python dependencies
 echo 🐍 Installing Python dependencies...
 cd backend || exit /b 1
-pip install -r requirements.txt || (
+pip install -r ../requirements.txt || (
     echo ❌ Failed to install Python dependencies!
     exit /b 1
 )

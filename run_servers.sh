@@ -29,7 +29,7 @@ echo "✅ Database setup completed!"
 # Install Python dependencies
 echo "🐍 Installing Python dependencies..."
 cd backend || { echo "❌ Backend directory not found!"; exit 1; }
-pip install -r requirements.txt || { echo "❌ Failed to install Python dependencies!"; exit 1; }
+pip install -r ../requirements.txt || { echo "❌ Failed to install Python dependencies!"; exit 1; }
 
 # Start the backend server
 echo "🚀 Starting the backend server..."
