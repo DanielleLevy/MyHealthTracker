@@ -24,10 +24,21 @@ mysql -u %DB_USER% -p%DB_PASSWORD% %DB_NAME% < %DB_FILE%
 
 echo ✅ Database setup completed!
 
-:: Install Python dependencies
-echo 🐍 Installing Python dependencies...
+:: Move to backend directory
 cd backend || exit /b 1
-pip install -r ../requirements.txt || (
+
+:: Check if virtual environment exists, if not, create it
+if not exist venv (
+    echo 🔧 Creating virtual environment...
+    python -m venv venv
+)
+
+:: Activate virtual environment
+call venv\Scripts\activate
+
+:: Install Python dependencies
+echo 📦 Installing Python dependencies...
+pip install -r ..\requirements.txt || (
     echo ❌ Failed to install Python dependencies!
     exit /b 1
 )
@@ -38,14 +49,8 @@ start /B python auth_api.py
 echo ✅ Backend server started.
 
 :: Navigate to the frontend directory and install dependencies
-echo 🛠️ Setting up the frontend...
 cd ../my_health_tracker || exit /b 1
-npm install || (
-    echo ❌ npm install failed!
-    exit /b 1
-)
-
-:: Start the frontend server
+npm install
 start /B npm start
 echo ✅ Frontend server started.
 

@@ -26,9 +26,21 @@ mysql -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$DB_FILE"
 
 echo "✅ Database setup completed!"
 
-# Install Python dependencies
-echo "🐍 Installing Python dependencies..."
+# Move to backend directory
+echo "🐍 Setting up Python environment..."
 cd backend || { echo "❌ Backend directory not found!"; exit 1; }
+
+# Create virtual environment if it doesn't exist
+if [ ! -d "venv" ]; then
+  echo "🔧 Creating virtual environment..."
+  python3 -m venv venv
+fi
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install Python dependencies
+echo "📦 Installing Python dependencies..."
 pip install -r ../requirements.txt || { echo "❌ Failed to install Python dependencies!"; exit 1; }
 
 # Start the backend server
