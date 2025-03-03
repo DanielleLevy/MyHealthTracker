@@ -3,6 +3,7 @@ import pymysql
 from flask_cors import CORS  
 from datetime import datetime, date
 import joblib
+import os
 app = Flask(__name__)
 CORS(app) 
 
@@ -47,10 +48,10 @@ def get_user_data():
 
 def get_db_connection():
     return pymysql.connect(
-        host="localhost",
-        user="root",
-        password="Shiran0606!",
-        database="myhealthtracker",
+        host=os.getenv("DB_HOST", "localhost"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        database=os.getenv("DB_NAME", "myhealthtracker"),
         cursorclass=pymysql.cursors.DictCursor
     )
 @app.route('/api/add_test', methods=['POST'])
