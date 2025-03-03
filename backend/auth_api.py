@@ -7,6 +7,7 @@ import os
 app = Flask(__name__)
 CORS(app) 
 
+
 @app.route('/api/user_data', methods=['GET'])
 def get_user_data():
     username = request.args.get('username') 
@@ -47,6 +48,13 @@ def get_user_data():
 
 
 def get_db_connection():
+
+    print("🔧 Connecting to MySQL with:")
+    print("Host:", os.getenv("DB_HOST", "localhost"))
+    print("User:", os.getenv("DB_USER", "root"))
+    print("Password:", "********")
+    print("Database:", os.getenv("DB_NAME", "myhealthtracker"))
+
     return pymysql.connect(
         host=os.getenv("DB_HOST", "localhost"),
         user=os.getenv("DB_USER", "root"),

@@ -1,17 +1,34 @@
 #!/bin/bash
 
-DB_NAME="myhealthtracker_sample"
 DB_FILE="myhealthtracker_sample.sql"
 
-# Prompt user for MySQL username and password
+# Prompt user for MySQL username, password, database name, and host
 read -p "Enter MySQL username [default: root]: " DB_USER
 DB_USER=${DB_USER:-root}
 
 read -s -p "Enter MySQL password (press Enter if none): " DB_PASSWORD
 echo ""
 
+read -p "Enter MySQL database name [default: myhealthtracker_sample]: " DB_NAME
+DB_NAME=${DB_NAME:-myhealthtracker_sample}
+
+read -p "Enter MySQL host [default: localhost]: " DB_HOST
+DB_HOST=${DB_HOST:-localhost}
+
+# Display the database configurations (excluding password for security)
+echo "✅ MySQL Configurations:"
+echo "DB_NAME=$DB_NAME"
+echo "DB_USER=$DB_USER"
+echo "DB_HOST=$DB_HOST"
+
+# Export environment variables so the backend can access them
+export DB_NAME
+export DB_USER
+export DB_PASSWORD
+export DB_HOST
+
 # Check if MySQL is running
-if ! mysqladmin ping -h "localhost" --silent; then
+if ! mysqladmin ping -h "$DB_HOST" --silent; then
   echo "❌ MySQL is not running! Please start MySQL and try again."
   exit 1
 fi
@@ -43,7 +60,7 @@ source venv/bin/activate
 echo "📦 Installing Python dependencies..."
 pip install -r ../requirements.txt || { echo "❌ Failed to install Python dependencies!"; exit 1; }
 
-# Start the backend server
+# Start the backend server with the user-provided credentials
 echo "🚀 Starting the backend server..."
 python3 auth_api.py &
 BACKEND_PID=$!
